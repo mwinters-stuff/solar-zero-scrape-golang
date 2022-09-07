@@ -21,3 +21,5 @@
 # Go workspace file
 go.work
 
+testconfig.json
+__debug_bin
