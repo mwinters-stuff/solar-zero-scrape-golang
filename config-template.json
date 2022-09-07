@@ -1,0 +1,26 @@
+{
+  "SolarZero": {
+      "Username": "your@email",
+      "Password": "password",
+      "UserPoolId": "us-west-2_NoMpv1v1A",
+      "ClientId": "6mgtqq7vvf7eo3r3qrsg6kl1tf",
+      "API": {
+        "Region" :"us-west-2",
+        "ApiGatewayURL": "https://d6nfzye2cb.execute-api.us-west-2.amazonaws.com",
+        "ApiKey": "mA0UW2ldUUQBY3e9bZWq9lCeKQUNCZC9oKidvdbb",
+        "SolarZeroApiAddress": "solarzero.pnz.technology"
+      }
+  },
+  "InfluxDB":{
+      "Token": "token",
+      "HostUrl": "https://influxdb.example.com",
+      "Org": "example.com",
+      "Bucket": "solarzero/autogen"
+  },
+  "MQTT": {
+    "URL":"mqtt://example.com:1883",
+    "Username": "solarzero",
+    "Password": "zerosolar",
+    "BaseTopic":"solar-zero"
+  }
+}
