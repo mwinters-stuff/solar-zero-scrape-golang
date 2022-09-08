@@ -32,3 +32,18 @@ type DayDatum struct {
 	BatteryGrid *float64 `json:"Battery grid"`
 	HomeLoad    *float64 `json:"Home load"`
 }
+
+func (r *DayDatum) GetInfluxFields() map[string]interface{} {
+	return map[string]interface{}{
+		"hour":        r.Hour,
+		"export":      r.Export,
+		"grid":        r.Grid,
+		"solarUse":    r.SolarUse,
+		"soc":         r.SoC,
+		"charge":      r.Charge,
+		"discharge":   r.Discharge,
+		"solar":       r.Solar,
+		"batteryGrid": r.BatteryGrid,
+		"homeLoad":    r.HomeLoad,
+	}
+}

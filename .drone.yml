@@ -5,4 +5,17 @@ steps:
 - name: build
   image: golang
   commands:
-  - go build
+  - go build -o solar-zero-scrape
+
+- name: build docker image
+  image: plugins/docker
+  settings:
+    username: 
+      from_secret: harbor-username
+    password: 
+      from_secret: harbor-password
+    repo: harbor.winters.org.nz/library/solar-zero-scrape-test
+    registry: harbor.winters.org.nz
+    tags: 
+      - latest 
+      - 0.0.${DRONE_BUILD_NUMBER}

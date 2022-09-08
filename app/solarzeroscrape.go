@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -123,8 +123,7 @@ func (szs *SolarZeroScrape) getUser() bool {
 		println("ERROR: Cognito GetUser (GetUser): " + err.Error())
 		return false
 	}
-	for i := 0; i < len(getUserOutput.UserAttributes); i++ {
-		var attr = getUserOutput.UserAttributes[i]
+	for _, attr := range getUserOutput.UserAttributes {
 		szs.userAttributes[*attr.Name] = *attr.Value
 	}
 
@@ -141,7 +140,7 @@ func (szs *SolarZeroScrape) fetchSalesForceData() bool {
 	var jsonStr = []byte(`"` + szs.userAttributes["custom:contactId"] + `"`)
 	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/prod/newuserinfo",
 		szs.config.SolarZero.API.APIGatewayURL), bytes.NewBuffer(jsonStr))
-	// ...
+
 	req.Header.Add("X-API-KEY", szs.config.SolarZero.API.APIKey)
 	req.Header.Add("content-type", "application/json")
 
@@ -151,7 +150,7 @@ func (szs *SolarZeroScrape) fetchSalesForceData() bool {
 		return false
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		println("ERROR: Fetch SalesForce Data (ReadAll): " + err.Error())
 		return false
@@ -207,8 +206,8 @@ func (szs *SolarZeroScrape) getCookies() bool {
 	// 2nd stage of cookie get.
 	req, _ = http.NewRequest(method, url, nil)
 
-	for i := 0; i < len(cookies); i++ {
-		req.AddCookie(cookies[i])
+	for _, cookie := range cookies {
+		req.AddCookie(cookie)
 	}
 
 	res, err = client.Do(req)
@@ -275,8 +274,8 @@ func (szs *SolarZeroScrape) getWithCookies(url string) ([]byte, error) {
 	}
 	req, _ := http.NewRequest(method, url, nil)
 
-	for i := 0; i < len(szs.cookies); i++ {
-		req.AddCookie(szs.cookies[i])
+	for _, cookie := range szs.cookies {
+		req.AddCookie(cookie)
 	}
 
 	res, err := client.Do(req)
@@ -292,7 +291,7 @@ func (szs *SolarZeroScrape) getWithCookies(url string) ([]byte, error) {
 		return nil, fmt.Errorf("needs reauthentication")
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		println("ERROR: Get Url With Cookies (ReadAll): " + err.Error())
 		return nil, err
