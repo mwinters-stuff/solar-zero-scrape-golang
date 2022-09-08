@@ -33,16 +33,16 @@ type CurrentData struct {
 
 func (r *CurrentData) GetInfluxFields() map[string]interface{} {
 	return map[string]interface{}{
-		"deviceStatus":    r.DeviceStatus,
-		"dPowerFlow":      r.DPowerFlow,
-		"export":          r.Export,
-		"import":          r.Import,
+		"DeviceStatus":    r.DeviceStatus,
+		"DPowerFlow":      r.DPowerFlow,
+		"Export":          r.Export,
+		"Import":          r.Import,
 		"Load":            r.Load,
-		"solar":           r.Solar,
-		"soc":             r.Soc,
-		"charge":          r.Charge,
-		"gridPowerOutage": r.GridPowerOutage,
-		"temperature":     r.Temperature,
+		"Solar":           r.Solar,
+		"Soc":             r.Soc,
+		"Charge":          r.Charge,
+		"GridPowerOutage": r.GridPowerOutage,
+		"Temperature":     r.Temperature,
 	}
 }
 

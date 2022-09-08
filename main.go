@@ -19,6 +19,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	if config.DebugLog != nil {
+		os.WriteFile(*config.DebugLog, []byte("Debug Log Started\n"), 0644)
+	}
 
 	influxdb := app.NewInfluxDBWriter(&config)
 	err = influxdb.Connect()
@@ -36,11 +39,7 @@ func main() {
 		// get data once a minute until it changes.
 		_, success := scrape.GetData()
 		if success {
-			err = influxdb.WriteData(scrape)
-			if err != nil {
-				panic(err)
-			}
-
+			influxdb.WriteData(scrape)
 		}
 		changed := false
 		for success && !changed {
@@ -54,9 +53,6 @@ func main() {
 
 		for success {
 			influxdb.WriteData(scrape)
-			if err != nil {
-				panic(err)
-			}
 
 			delay := time.NewTimer(5 * time.Minute)
 			t := <-delay.C
