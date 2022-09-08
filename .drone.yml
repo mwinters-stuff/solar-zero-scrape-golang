@@ -5,6 +5,7 @@ steps:
 - name: build
   image: golang
   commands:
+  - go test -v github.com/mwinters-stuff/solar-zero-scrape-golang/app
   - go build -o solar-zero-scrape
 
 - name: build docker image

@@ -24,3 +24,4 @@ go.work
 testconfig.json
 __debug_bin
 solar-zero-scrape
+debug.log

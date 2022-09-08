@@ -35,15 +35,15 @@ type DayDatum struct {
 
 func (r *DayDatum) GetInfluxFields() map[string]interface{} {
 	return map[string]interface{}{
-		"hour":        r.Hour,
-		"export":      r.Export,
-		"grid":        r.Grid,
-		"solarUse":    r.SolarUse,
-		"soc":         r.SoC,
-		"charge":      r.Charge,
-		"discharge":   r.Discharge,
-		"solar":       r.Solar,
-		"batteryGrid": r.BatteryGrid,
-		"homeLoad":    r.HomeLoad,
+		"Hour":        r.Hour,
+		"Export":      *r.Export,
+		"Grid":        *r.Grid,
+		"SolarUse":    *r.SolarUse,
+		"SoC":         *r.SoC,
+		"Charge":      *r.Charge,
+		"Discharge":   *r.Discharge,
+		"Solar":       *r.Solar,
+		"BatteryGrid": *r.BatteryGrid,
+		"HomeLoad":    *r.HomeLoad,
 	}
 }

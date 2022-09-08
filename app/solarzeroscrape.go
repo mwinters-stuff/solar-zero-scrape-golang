@@ -3,10 +3,10 @@ package app
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -16,6 +16,7 @@ import (
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/app/daydata"
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/app/logindata"
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/app/monthdata"
+	"github.com/mwinters-stuff/solar-zero-scrape-golang/app/salesforcedata"
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/app/yeardata"
 	"golang.org/x/net/html"
 
@@ -29,7 +30,7 @@ func NewSolarZeroScrape(config *config.Configuration) *SolarZeroScrape {
 	s := &SolarZeroScrape{
 		config:         config,
 		userAttributes: make(map[string]string),
-		salesForceData: make(map[string]interface{}),
+		salesForceData: salesforcedata.SalesForceData{},
 		reauthenticate: false,
 	}
 
@@ -37,16 +38,15 @@ func NewSolarZeroScrape(config *config.Configuration) *SolarZeroScrape {
 }
 
 type SolarZeroScrape struct {
-	config          *config.Configuration
-	accessToken     string
-	refreshToken    string
-	idToken         string
-	cognitoSvc      *cip.Client
-	userAttributes  map[string]string
-	salesForceData  map[string]interface{}
-	salesForceToken string
-	cookies         []*http.Cookie
-	reauthenticate  bool
+	config         *config.Configuration
+	accessToken    string
+	refreshToken   string
+	idToken        string
+	cognitoSvc     *cip.Client
+	userAttributes map[string]string
+	salesForceData salesforcedata.SalesForceData
+	cookies        []*http.Cookie
+	reauthenticate bool
 
 	logindata logindata.LoginData
 
@@ -156,14 +156,13 @@ func (szs *SolarZeroScrape) fetchSalesForceData() bool {
 		return false
 	}
 	// fmt.Println(string(body))
+	szs.writeToLog("SalesForceData", body)
 
-	// var dat map[string]interface{}
-	if err := json.Unmarshal(body, &szs.salesForceData); err != nil {
+	szs.salesForceData, err = salesforcedata.UnmarshalSalesForceData(body)
+	if err != nil {
 		println("ERROR: Fetch SalesForce Data (Unmarshal): " + err.Error())
 		return false
 	}
-	szs.salesForceToken = szs.salesForceData["token"].(string)
-	// fmt.Printf("SalesForceToken: %s\n", szs.salesForceToken)
 	println("INFO: Fetch SalesForce Data Success")
 
 	return true
@@ -174,7 +173,7 @@ func (szs *SolarZeroScrape) getCookies() bool {
 	println("INFO: Get Cookies and Login Data")
 
 	url := fmt.Sprintf("https://%s/login/%s",
-		szs.config.SolarZero.API.SolarZeroAPIAddress, szs.salesForceToken)
+		szs.config.SolarZero.API.SolarZeroAPIAddress, szs.salesForceData.Token)
 	method := "GET"
 
 	client := &http.Client{
@@ -242,6 +241,7 @@ func (szs *SolarZeroScrape) getCookies() bool {
 						println("ERROR: Get Cookies and Login Data (UnmarshalLoginData): " + err.Error())
 						return false
 					}
+					szs.writeToLog("LoginData", []byte(text))
 
 					println("INFO: Get Cookies and Login Data Success")
 					szs.reauthenticate = false
@@ -296,6 +296,7 @@ func (szs *SolarZeroScrape) getWithCookies(url string) ([]byte, error) {
 		println("ERROR: Get Url With Cookies (ReadAll): " + err.Error())
 		return nil, err
 	}
+	szs.writeToLog(url, body)
 	// fmt.Println(string(body))
 	println("INFO: Get Url With Cookies Success")
 
@@ -444,4 +445,18 @@ func (szs *SolarZeroScrape) GetData() (bool, bool) {
 	}
 
 	return changed, true
+}
+
+func (szs *SolarZeroScrape) writeToLog(what string, data []byte) {
+	if szs.config.DebugLog != nil {
+
+		file, err := os.OpenFile(*szs.config.DebugLog, os.O_APPEND|os.O_WRONLY, 0644)
+		if err == nil {
+			defer file.Close()
+			file.WriteString(what)
+			file.WriteString("\n")
+			file.Write(data)
+			file.WriteString("\n\n\n")
+		}
+	}
 }

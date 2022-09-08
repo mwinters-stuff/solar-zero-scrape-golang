@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -27,15 +28,26 @@ type InfluxDBWriter struct {
 
 func (iw *InfluxDBWriter) Connect() error {
 	iw.client = influxdb2.NewClient(iw.config.InfluxDB.HostURL, iw.config.InfluxDB.Token)
-
+	health, _ := iw.client.Health(context.Background())
+	println("INFO: InfluxDB Health: ", *health.Message, health.Status, *health.Version)
 	iw.writeAPI = iw.client.WriteAPI(iw.config.InfluxDB.Org, iw.config.InfluxDB.Bucket)
+
+	errorsCh := iw.writeAPI.Errors()
+	// Create go proc for reading and logging errors
+	go func() {
+		for err := range errorsCh {
+			fmt.Printf("ERROR: InfluxDB Write error: %s\n", err.Error())
+		}
+	}()
+
 	return nil
 }
 
-func (iw *InfluxDBWriter) WriteData(scrape *SolarZeroScrape) error {
+func (iw *InfluxDBWriter) WriteData(scrape *SolarZeroScrape) {
+	println("INFO: Writing to InfluxDB")
 	iw.writeCurrentData(scrape)
 	iw.writeDayData(scrape)
-	return nil
+	iw.writeAPI.Flush()
 }
 
 func (iw *InfluxDBWriter) writeCurrentData(scrape *SolarZeroScrape) {
@@ -67,6 +79,8 @@ func (iw *InfluxDBWriter) writeDayData(scrape *SolarZeroScrape) error {
 					},
 					hourData.GetInfluxFields(),
 					stamp))
+				hd := hourData.GetInfluxFields()
+				println(hd["export"], hd["grid"], hd)
 			}
 		}
 	}
