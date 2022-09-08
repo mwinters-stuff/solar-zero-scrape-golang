@@ -10,6 +10,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) < 2 {
+		println("Usage: solar-zero-scrape config.json")
+		return
+	}
 	argsWithoutProg := os.Args[1:]
 	config, err := config.LoadConfiguration(argsWithoutProg[0])
 	if err != nil {
