@@ -12,6 +12,10 @@ import (
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/app/config"
 )
 
+var (
+	InfluxDBNewClient = influxdb2.NewClient
+)
+
 func NewInfluxDBWriter(config *config.Configuration) *InfluxDBWriter {
 	s := &InfluxDBWriter{
 		config: config,
@@ -27,7 +31,7 @@ type InfluxDBWriter struct {
 }
 
 func (iw *InfluxDBWriter) Connect() error {
-	iw.client = influxdb2.NewClient(iw.config.InfluxDB.HostURL, iw.config.InfluxDB.Token)
+	iw.client = InfluxDBNewClient(iw.config.InfluxDB.HostURL, iw.config.InfluxDB.Token)
 	health, _ := iw.client.Health(context.Background())
 	println("INFO: InfluxDB Health: ", *health.Message, health.Status, *health.Version)
 	iw.writeAPI = iw.client.WriteAPI(iw.config.InfluxDB.Org, iw.config.InfluxDB.Bucket)
@@ -37,6 +41,7 @@ func (iw *InfluxDBWriter) Connect() error {
 	go func() {
 		for err := range errorsCh {
 			fmt.Printf("ERROR: InfluxDB Write error: %s\n", err.Error())
+			panic(err)
 		}
 	}()
 
@@ -47,6 +52,8 @@ func (iw *InfluxDBWriter) WriteData(scrape *SolarZeroScrape) {
 	println("INFO: Writing to InfluxDB")
 	iw.writeCurrentData(scrape)
 	iw.writeDayData(scrape)
+	iw.writeMonthData(scrape)
+	iw.writeYearData(scrape)
 	iw.writeAPI.Flush()
 }
 
@@ -54,10 +61,11 @@ func (iw *InfluxDBWriter) writeCurrentData(scrape *SolarZeroScrape) {
 	iw.writeAPI.WritePoint(influxdb2.NewPoint("solar", nil, scrape.currentData.GetInfluxFields(), time.Now()))
 }
 
-func (iw *InfluxDBWriter) writeDayData(scrape *SolarZeroScrape) error {
+func (iw *InfluxDBWriter) writeDayData(scrape *SolarZeroScrape) {
 
 	for _, hourData := range scrape.dayData {
-		if hourData.Export != nil {
+		influxFields := hourData.GetInfluxFields()
+		if influxFields != nil {
 			hourstr := hourData.Hour
 			if hourstr == "12 am" {
 				hourstr = "0 am"
@@ -70,36 +78,53 @@ func (iw *InfluxDBWriter) writeDayData(scrape *SolarZeroScrape) error {
 				}
 				t := time.Now()
 				stamp := time.Date(t.Year(), t.Month(), t.Day(), hour, 0, 0, 0, time.Local)
-				hourData.Hour = fmt.Sprint(stamp)
+				(*influxFields)["Hour"] = fmt.Sprint(stamp)
 
 				iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-day",
 					map[string]string{
-						"date": fmt.Sprint(time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)),
-						"hour": fmt.Sprint(hour),
+						"date": fmt.Sprint(stamp),
 					},
-					hourData.GetInfluxFields(),
+					*influxFields,
 					stamp))
-				hd := hourData.GetInfluxFields()
-				println(hd["export"], hd["grid"], hd)
+				fmt.Printf("INFO: Write to influx Hour %s\n", fmt.Sprint(stamp))
+
 			}
 		}
 	}
-	return nil
-
 }
 
-// func (iw *InfluxDBWriter) writeMonthData(scrape *SolarZeroScrape) error {
-// 	p := influxdb2.NewPoint("solar-day",
-// 		nil,
-// 		scrape.currentData.GetInfluxFields(),
-// 		time.Now())
-// 	return iw.writeAPI.WritePoint(context.Background(), p)
-// }
+func (iw *InfluxDBWriter) writeMonthData(scrape *SolarZeroScrape) {
+	for _, dayData := range scrape.monthData {
+		influxFields := dayData.GetInfluxFields()
+		if influxFields != nil {
+			t := time.Now()
+			stamp := time.Date(t.Year(), t.Month(), int(dayData.Day), 0, 0, 0, 0, time.Local)
 
-// func (iw *InfluxDBWriter) writeYearData(scrape *SolarZeroScrape) error {
-// 	p := influxdb2.NewPoint("solar-day",
-// 		nil,
-// 		scrape.currentData.GetInfluxFields(),
-// 		time.Now())
-// 	return iw.writeAPI.WritePoint(context.Background(), p)
-// }
+			iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-month",
+				map[string]string{
+					"date": fmt.Sprint(stamp),
+				},
+				*influxFields,
+				stamp))
+			fmt.Printf("INFO: Write to influx Day %s\n", fmt.Sprint(stamp))
+		}
+	}
+}
+
+func (iw *InfluxDBWriter) writeYearData(scrape *SolarZeroScrape) {
+	for _, monthData := range scrape.yearData {
+		influxFields := monthData.GetInfluxFields()
+		if influxFields != nil {
+			t := time.Now()
+			stamp := time.Date(t.Year(), monthData.GetMonthNum(), 1, 0, 0, 0, 0, time.Local)
+
+			iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-year",
+				map[string]string{
+					"date": fmt.Sprint(stamp),
+				},
+				*influxFields,
+				stamp))
+			fmt.Printf("INFO: Write to influx Month %s\n", fmt.Sprint(stamp))
+		}
+	}
+}

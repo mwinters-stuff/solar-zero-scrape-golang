@@ -23,9 +23,26 @@ func (r *MonthData) Marshal() ([]byte, error) {
 type MonthDatum struct {
 	Day         int64    `json:"Day"`
 	SolarUse    *float64 `json:"Solar use"`
-	Grid        float64  `json:"Grid"`
-	Export      float64  `json:"Export"`
+	Grid        *float64 `json:"Grid"`
+	Export      *float64 `json:"Export"`
 	Solar       *float64 `json:"Solar"`
 	BatteryGrid *float64 `json:"Battery grid"`
 	HomeLoad    *float64 `json:"Home load"`
+}
+
+func (r *MonthDatum) GetInfluxFields() *map[string]interface{} {
+	if r.SolarUse != nil {
+		return &map[string]interface{}{
+			"Day":         r.Day,
+			"SolarUse":    *r.SolarUse,
+			"Grid":        *r.Grid,
+			"Export":      *r.Export,
+			"Solar":       *r.Solar,
+			"BatteryGrid": *r.BatteryGrid,
+			"HomeLoad":    *r.HomeLoad,
+		}
+	} else {
+		return nil
+	}
+
 }

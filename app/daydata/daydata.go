@@ -33,17 +33,21 @@ type DayDatum struct {
 	HomeLoad    *float64 `json:"Home load"`
 }
 
-func (r *DayDatum) GetInfluxFields() map[string]interface{} {
-	return map[string]interface{}{
-		"Hour":        r.Hour,
-		"Export":      *r.Export,
-		"Grid":        *r.Grid,
-		"SolarUse":    *r.SolarUse,
-		"SoC":         *r.SoC,
-		"Charge":      *r.Charge,
-		"Discharge":   *r.Discharge,
-		"Solar":       *r.Solar,
-		"BatteryGrid": *r.BatteryGrid,
-		"HomeLoad":    *r.HomeLoad,
+func (r *DayDatum) GetInfluxFields() *map[string]interface{} {
+	if r.Export != nil {
+		return &map[string]interface{}{
+			"Hour":        r.Hour,
+			"Export":      *r.Export,
+			"Grid":        *r.Grid,
+			"SolarUse":    *r.SolarUse,
+			"SoC":         *r.SoC,
+			"Charge":      *r.Charge,
+			"Discharge":   *r.Discharge,
+			"Solar":       *r.Solar,
+			"BatteryGrid": *r.BatteryGrid,
+			"HomeLoad":    *r.HomeLoad,
+		}
+	} else {
+		return nil
 	}
 }

@@ -5,7 +5,8 @@ steps:
 - name: build
   image: golang
   commands:
-  - go test -v github.com/mwinters-stuff/solar-zero-scrape-golang/app
+  - go install github.com/stretchr/gorc
+  - gorc test
   - go build -o solar-zero-scrape
 
 - name: build docker image
