@@ -1,0 +1,51 @@
+// package app
+
+// import (
+// 	"context"
+// 	"testing"
+
+// 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+// 	"github.com/influxdata/influxdb-client-go/v2/api"
+// 	"github.com/influxdata/influxdb-client-go/v2/domain"
+// 	"github.com/mwinters-stuff/solar-zero-scrape-golang/app/config"
+// 	"github.com/stretchr/testify/assert"
+// 	"github.com/stretchr/testify/mock"
+// )
+
+// func String(s string) *string {
+// 	return &s
+// }
+
+// type mockInfluxDB2Client struct {
+// 	mock.Mock
+// }
+
+// func (m *mockInfluxDB2Client) Health(ctx context.Context) (*domain.HealthCheck, error) {
+// 	args := m.Called(ctx)
+
+// 	return args.Get(0).(*domain.HealthCheck), args.Error(1)
+// }
+
+// func (m *mockInfluxDB2Client) WriteAPI(org, bucket string) api.WriteAPI {
+// 	args := m.Called(org, bucket)
+// 	return args.Get(0).(api.WriteAPI)
+// }
+
+// func MocInfluxDBNewClient(url, token string) mockInfluxDB2Client {
+// 	return new(mockInfluxDB2Client)
+
+// }
+
+// func TestOne(t *testing.T) {
+// 	//
+// 	// InfluxDBNewClient = MocInfluxDBNewClient
+// 	// config := config.Configuration{}
+// 	// config.InfluxDB.HostURL = "https://influxdb.url/"
+// 	// config.InfluxDB.Token = "ANTOKENTHATSBIG"
+// 	// config.InfluxDB.Bucket = "bucket"
+// 	// config.InfluxDB.Org = "example.org"
+
+// 	// writer := NewInfluxDBWriter(&config)
+// 	// assert.NotNil(t, writer)
+
+// }
