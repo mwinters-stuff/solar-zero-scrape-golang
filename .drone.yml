@@ -48,7 +48,7 @@ steps:
   image: harbor.winters.org.nz/hub-cache/mikefarah/yq:latest
   user: 0
   commands:
-    - VERTAG=${DRONE_TAG##v}
+    - VERTAG=$${DRONE_TAG##v}
     - echo "New Version $${VERTAG} for $${CHART_NAME_RELEASE}"
     - yq -i ".version = \"$${VERTAG}\" | .appVersion = \"$${VERTAG}\"" "charts/$${CHART_NAME_RELEASE}/Chart.yaml"
     - yq -i ".image.tag = \"$${VERTAG}\"" "charts/$${CHART_NAME_RELEASE}/values.yaml"
@@ -86,7 +86,7 @@ steps:
   depends_on:
     - build-release-docker-image
     - build-release-chart
-  trigger:
+  when:
     event:
       - tag
 
@@ -96,6 +96,6 @@ steps:
   - echo "Starting Dev Build"
   depends_on:
     - build-dev-docker-image
-  trigger:
+  when:
     event:
       - push
