@@ -82,8 +82,7 @@ steps:
 - name: release
   image: harbor.winters.org.nz/hub-cache/library/ubuntu:20.04
   commands:
-    - VERTAG=${DRONE_TAG##v}
-    - echo "Starting Release Build Version: $${VER_TAG}"
+    - echo "Starting Release Build"
   depends_on:
     - build-release-docker-image
     - build-release-chart
