@@ -2,10 +2,6 @@ kind: pipeline
 type: docker
 name: default
 
-environment:
-  CHART_NAME_DEV: solar-zero-scrape-dev
-  CHART_NAME_RELEASE: solar-zero-scrape
-
 steps:
 - name: build-go
   image: golang
@@ -21,7 +17,7 @@ steps:
       from_secret: harbor-username
     password: 
       from_secret: harbor-password
-    repo: harbor.winters.org.nz/library/${CHART_NAME_DEV}
+    repo: harbor.winters.org.nz/library/solar-zero-scrape-dev
     registry: harbor.winters.org.nz
     tags: 
       - latest
@@ -36,11 +32,11 @@ steps:
       from_secret: harbor-username
     password: 
       from_secret: harbor-password
-    repo: harbor.winters.org.nz/library/${CHART_NAME_RELEASE}
+    repo: harbor.winters.org.nz/library/solar-zero-scrape
     registry: harbor.winters.org.nz
     tags: 
       - latest
-      - ${DRONE_TAG##v}
+      - ${DRONE_SEMVER_SHORT}
   depends_on:
     - build-go
   when:
@@ -51,12 +47,12 @@ steps:
   image: harbor.winters.org.nz/hub-cache/mikefarah/yq:latest
   user: 0
   commands:
-    - VERTAG=$${DRONE_TAG##v}
-    - echo "New Version $${VERTAG} for $${CHART_NAME_RELEASE}"
-    - yq -i ".version = \"$${VERTAG}\" | .appVersion = \"$${VERTAG}\"" "charts/$${CHART_NAME_RELEASE}/Chart.yaml"
-    - yq -i ".image.tag = \"$${VERTAG}\"" "charts/$${CHART_NAME_RELEASE}/values.yaml"
-    - cat "charts/$${CHART_NAME_RELEASE}/Chart.yaml"
-    - cat "charts/$${CHART_NAME_RELEASE}/values.yaml"
+    - VERTAG=$${DRONE_SEMVER_SHORT}
+    - echo "New Version $${VERTAG} for solar-zero-scrape"
+    - yq -i ".version = \"$${VERTAG}\" | .appVersion = \"$${VERTAG}\"" "charts/solar-zero-scrape/Chart.yaml"
+    - yq -i ".image.tag = \"$${VERTAG}\"" "charts/solar-zero-scrape/values.yaml"
+    - cat "charts/solar-zero-scrape/Chart.yaml"
+    - cat "charts/solar-zero-scrape/values.yaml"
   when:
     event:
       - tag
@@ -70,7 +66,7 @@ steps:
     HARBOR_USERNAME:
       from_secret: harbor-username
   commands:
-    - VERTAG=${DRONE_TAG##v}
+    - VERTAG=$${DRONE_SEMVER_SHORT}
     - env
     - apt-get update
     - apt-get install -y curl git
@@ -80,8 +76,8 @@ steps:
     - git config --global --add safe.directory $(pwd)
     - helm repo add --username "$${HARBOR_USERNAME}" --password "$${HARBOR_PASSWORD}" harbor https://harbor.winters.org.nz/chartrepo/library/ || exit 1
     - helm plugin install https://github.com/chartmuseum/helm-push || exit 1
-    - helm package -u charts/$${CHART_NAME_RELEASE} || exit 1
-    - helm cm-push "$${CHART_NAME_RELEASE}-$${VERTAG}.tgz" harbor || exit 1
+    - helm package -u charts/solar-zero-scrape || exit 1
+    - helm cm-push "solar-zero-scrape-$${VERTAG}.tgz" harbor || exit 1
   depends_on:
     - version-release-chart
   when:
