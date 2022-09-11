@@ -24,6 +24,12 @@ steps:
       - 0.3.${DRONE_BUILD_NUMBER}-dev
   depends_on:
     - build-go
+  when:
+    event:
+      include:
+        - push
+      exclude:
+        - tag
 
 - name: build-release-docker-image
   image: plugins/docker
@@ -103,4 +109,7 @@ steps:
     - build-dev-docker-image
   when:
     event:
-      - push
+      include:
+        - push
+      exclude:
+        - tag
