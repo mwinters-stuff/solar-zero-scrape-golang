@@ -43,6 +43,9 @@ steps:
       - ${DRONE_TAG##v}
   depends_on:
     - build-go
+  when:
+    event:
+      - tag
 
 - name: version-release-chart
   image: harbor.winters.org.nz/hub-cache/mikefarah/yq:latest
@@ -54,6 +57,9 @@ steps:
     - yq -i ".image.tag = \"$${VERTAG}\"" "charts/$${CHART_NAME_RELEASE}/values.yaml"
     - cat "charts/$${CHART_NAME_RELEASE}/Chart.yaml"
     - cat "charts/$${CHART_NAME_RELEASE}/values.yaml"
+  when:
+    event:
+      - tag
 
 - name: build-release-chart
   user: 0
@@ -78,6 +84,9 @@ steps:
     - helm cm-push "$${CHART_NAME_RELEASE}-$${VERTAG}.tgz" harbor || exit 1
   depends_on:
     - version-release-chart
+  when:
+    event:
+      - tag
 
 - name: release
   image: harbor.winters.org.nz/hub-cache/library/ubuntu:20.04
