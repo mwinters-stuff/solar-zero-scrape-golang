@@ -80,9 +80,10 @@ steps:
     - version-release-chart
 
 - name: release
-  image: harbor.winters.org.nz/hub-cache/library/alpine:latest
+  image: harbor.winters.org.nz/hub-cache/library/ubuntu:20.04
   commands:
-  - echo "Starting Release Build Version: $${DRONE_TAG##v}"
+    - VERTAG=${DRONE_TAG##v}
+    - echo "Starting Release Build Version: $${VER_TAG}"
   depends_on:
     - build-release-docker-image
     - build-release-chart
