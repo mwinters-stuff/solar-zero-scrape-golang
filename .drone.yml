@@ -80,6 +80,9 @@ steps:
     - version-release-chart
 
 - name: release
+  image: harbor.winters.org.nz/hub-cache/library/alpine:latest
+  commands:
+  - echo "Starting Release Build Version: ${DRONE_TAG##v}"
   depends_on:
     - build-release-docker-image
     - build-release-chart
@@ -88,6 +91,9 @@ steps:
       - tag
 
 - name: dev
+  image: harbor.winters.org.nz/hub-cache/library/alpine:latest
+  commands:
+  - echo "Starting Dev Build"
   depends_on:
     - build-dev-docker-image
   trigger:
