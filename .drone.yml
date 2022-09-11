@@ -82,7 +82,7 @@ steps:
 - name: release
   image: harbor.winters.org.nz/hub-cache/library/alpine:latest
   commands:
-  - echo "Starting Release Build Version: ${DRONE_TAG##v}"
+  - echo "Starting Release Build Version: $${DRONE_TAG##v}"
   depends_on:
     - build-release-docker-image
     - build-release-chart
