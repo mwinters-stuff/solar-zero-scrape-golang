@@ -7,7 +7,7 @@
 
 image:
   # -- image repository
-  repository: harbor.winters.org.nz/public/solar-zero-scrape
+  repository: harbor.winters.org.nz/library/solar-zero-scrape
   # -- image tag
   tag: "latest"
   # -- image pull policy
@@ -41,7 +41,7 @@ persistence:
     enabled: true
     type: configMap
     name: solar-zero-scrape-config
-    
+
 
 configmap:
   config:
