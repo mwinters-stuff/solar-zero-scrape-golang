@@ -111,7 +111,7 @@ func TestDecodeRangeData(t *testing.T) {
 	assert.Equal(t, "2-Jul", day.Date)
 	assert.Equal(t, 5.63, day.SolarUse)
 	assert.Equal(t, 40.06, day.Grid)
-	assert.Equal(t, 0.07, day.Export)
+	assert.Equal(t, -0.07, day.Export)
 	assert.Equal(t, 45.29, day.Load)
 	assert.Equal(t, 5.7, day.Solar)
 	assert.Equal(t, 9.4, day.Discharge)

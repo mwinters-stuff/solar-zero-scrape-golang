@@ -1,23 +1,95 @@
 kind: pipeline
+type: docker
 name: default
 
+environment:
+  CHART_NAME_DEV: solar-zero-scrape-dev
+  CHART_NAME_RELEASE: solar-zero-scrape
+
 steps:
-- name: build
+- name: build-go
   image: golang
   commands:
   - go install github.com/stretchr/gorc
   - gorc test
   - go build -o solar-zero-scrape
 
-- name: build docker image
+- name: build-dev-docker-image
   image: plugins/docker
   settings:
     username: 
       from_secret: harbor-username
     password: 
       from_secret: harbor-password
-    repo: harbor.winters.org.nz/library/solar-zero-scrape-test
+    repo: harbor.winters.org.nz/library/${CHART_NAME_DEV}
     registry: harbor.winters.org.nz
     tags: 
-      - latest 
-      - 0.0.${DRONE_BUILD_NUMBER}
+      - latest
+      - 0.3.${DRONE_BUILD_NUMBER}-dev
+  depends_on:
+    - build-go
+
+- name: build-release-docker-image
+  image: plugins/docker
+  settings:
+    username: 
+      from_secret: harbor-username
+    password: 
+      from_secret: harbor-password
+    repo: harbor.winters.org.nz/library/${CHART_NAME_RELEASE}
+    registry: harbor.winters.org.nz
+    tags: 
+      - latest
+      - ${DRONE_TAG##v}
+  depends_on:
+    - build-go
+
+- name: version-release-chart
+  image: harbor.winters.org.nz/hub-cache/mikefarah/yq:latest
+  user: 0
+  commands:
+    - VERTAG=${DRONE_TAG##v}
+    - echo "New Version $${VERTAG} for $${CHART_NAME_RELEASE}"
+    - yq -i ".version = \"$${VERTAG}\" | .appVersion = \"$${VERTAG}\"" "charts/$${CHART_NAME_RELEASE}/Chart.yaml"
+    - yq -i ".image.tag = \"$${VERTAG}\"" "charts/$${CHART_NAME_RELEASE}/values.yaml"
+    - cat "charts/$${CHART_NAME_RELEASE}/Chart.yaml"
+    - cat "charts/$${CHART_NAME_RELEASE}/values.yaml"
+
+- name: build-release-chart
+  user: 0
+  image: harbor.winters.org.nz/hub-cache/library/ubuntu:20.04
+  environment:
+    HARBOR_PASSWORD:
+      from_secret: harbor-password
+    HARBOR_USERNAME:
+      from_secret: harbor-username
+  commands:
+    - VERTAG=${DRONE_TAG##v}
+    - env
+    - apt-get update
+    - apt-get install -y curl git
+    - curl -fsSL -o /tmp/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    - chmod 700 /tmp/get_helm.sh
+    - /tmp/get_helm.sh
+    - git config --global --add safe.directory $(pwd)
+    - helm repo add --username "$${HARBOR_USERNAME}" --password "$${HARBOR_PASSWORD}" harbor https://harbor.winters.org.nz/chartrepo/library/ || exit 1
+    - helm plugin install https://github.com/chartmuseum/helm-push || exit 1
+    - helm package -u charts/$${CHART_NAME_RELEASE} || exit 1
+    - helm cm-push "$${CHART_NAME_RELEASE}-$${VERTAG}.tgz" harbor || exit 1
+  depends_on:
+    - version-release-chart
+
+- name: release
+  depends_on:
+    - build-release-docker-image
+    - build-release-chart
+  trigger:
+    event:
+      - tag
+
+- name: dev
+  depends_on:
+    - build-dev-docker-image
+  trigger:
+    event:
+      - push
