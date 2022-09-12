@@ -14,6 +14,9 @@
 		}
 	},
 	"runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
+	"containerEnv": {
+		"TZ":"Pacific/Auckland"
+	},
 
 	// Configure tool-specific properties.
 	"customizations": {
@@ -32,7 +35,8 @@
 				"golang.go",
 				"eamodio.gitlens"
 			]
-		}
+		},
+
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
