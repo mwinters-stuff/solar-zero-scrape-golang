@@ -1,68 +1,63 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"flag"
 	"time"
 
+	"github.com/go-co-op/gocron"
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/app"
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/app/config"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	if len(os.Args) < 2 {
+	configFile := flag.String("config", "", "Config file")
+	debug := flag.Bool("debug", false, "sets log level to debug")
+	flag.Parse()
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if *debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
+	if *configFile == "" {
 		println("Usage: solar-zero-scrape config.json")
 		return
 	}
-	argsWithoutProg := os.Args[1:]
-	config, err := config.LoadConfiguration(argsWithoutProg[0])
+
+	config, err := config.LoadConfiguration(*configFile)
 	if err != nil {
-		panic(err)
-	}
-	if config.DebugLog != nil {
-		os.WriteFile(*config.DebugLog, []byte("Debug Log Started\n"), 0644)
+		log.Panic().Msg("LoadConfiguration " + err.Error())
 	}
 
 	influxdb := app.NewInfluxDBWriter(&config)
 	err = influxdb.Connect()
 	if err != nil {
-		panic(err)
+		log.Panic().Msgf("InfluxDB Connect %s", err.Error())
 	}
 
-	println("Authenticating ")
+	log.Info().Msg("Authenticating")
 
 	scrape := app.NewSolarZeroScrape(&config)
 
+	s := gocron.NewScheduler(time.Local)
+
 	for scrape.AuthenticateFully() {
-		println("INFO: Getting data at 1 minute interval until data changes")
+		s.Every(5).Minutes().Do(func() {
+			log.Info().Msgf("Get Data at ", time.Now())
+			success := scrape.GetData()
+			if success {
+				influxdb.WriteData(scrape)
+			} else {
+				log.Error().Msg("GetData Failed, Reauthenticating")
+				s.Stop()
+			}
+		})
+		s.StartBlocking()
 
-		// get data once a minute until it changes.
-		_, success := scrape.GetData()
-		if success {
-			influxdb.WriteData(scrape)
-		}
-		changed := false
-		for success && !changed {
-			delay := time.NewTimer(1 * time.Minute)
-			t := <-delay.C
-			fmt.Println("INFO: Get Data at ", t)
-			changed, success = scrape.GetData()
-		}
-
-		println("INFO: Switching to 5 minute interval")
-
-		for success {
-			influxdb.WriteData(scrape)
-
-			delay := time.NewTimer(5 * time.Minute)
-			t := <-delay.C
-			fmt.Println("INFO: Get Data at ", t)
-			_, success = scrape.GetData()
-		}
-
-		println("INFO: 5 Minute Interval Finished")
 	}
 
-	println("ERROR: Finished")
+	log.Error().Msg("AuthenicateFully Failed, Exiting")
 
 }
