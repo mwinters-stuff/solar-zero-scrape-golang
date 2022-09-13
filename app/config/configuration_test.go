@@ -9,7 +9,6 @@ import (
 func TestDecodeCurrentData(t *testing.T) {
 	json := `
 	{
-		"DebugLog":"debug.log",
 		"SolarZero": {
 				"Username": "your@email",
 				"Password": "password",
@@ -40,7 +39,6 @@ func TestDecodeCurrentData(t *testing.T) {
 	data, err := UnmarshalConfiguration([]byte(json))
 	assert.Nil(t, err, "Err is not nil")
 
-	assert.Equal(t, "debug.log", *data.DebugLog)
 	assert.Equal(t, "your@email", data.SolarZero.Username)
 	assert.Equal(t, "password", data.SolarZero.Password)
 	assert.Equal(t, "us-west-2_NoMpv1v1A", data.SolarZero.UserPoolID)
