@@ -6,6 +6,7 @@ steps:
 - name: build-go
   image: golang
   commands:
+  - go get github.com/stretchr/gorc
   - go install github.com/stretchr/gorc
   - gorc test
   - go build -o solar-zero-scrape
