@@ -35,7 +35,6 @@ func LoadConfiguration(filename string) (Configuration, error) {
 }
 
 type Configuration struct {
-	DebugLog  *string   `json:"DebugLog"`
 	SolarZero SolarZero `json:"SolarZero"`
 	InfluxDB  InfluxDB  `json:"InfluxDB"`
 	Mqtt      Mqtt      `json:"MQTT"`
