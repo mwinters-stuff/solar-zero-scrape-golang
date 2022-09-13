@@ -10,6 +10,7 @@ import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/app/config"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -33,15 +34,14 @@ type InfluxDBWriter struct {
 func (iw *InfluxDBWriter) Connect() error {
 	iw.client = InfluxDBNewClient(iw.config.InfluxDB.HostURL, iw.config.InfluxDB.Token)
 	health, _ := iw.client.Health(context.Background())
-	println("INFO: InfluxDB Health: ", *health.Message, health.Status, *health.Version)
+	log.Info().Msgf("InfluxDB Health: %s %s %s ", *health.Message, health.Status, *health.Version)
 	iw.writeAPI = iw.client.WriteAPI(iw.config.InfluxDB.Org, iw.config.InfluxDB.Bucket)
 
 	errorsCh := iw.writeAPI.Errors()
 	// Create go proc for reading and logging errors
 	go func() {
 		for err := range errorsCh {
-			fmt.Printf("ERROR: InfluxDB Write error: %s\n", err.Error())
-			panic(err)
+			log.Panic().Msgf("InfluxDB Write error: %s", err.Error())
 		}
 	}()
 
@@ -49,15 +49,17 @@ func (iw *InfluxDBWriter) Connect() error {
 }
 
 func (iw *InfluxDBWriter) WriteData(scrape *SolarZeroScrape) {
-	println("INFO: Writing to InfluxDB")
+	log.Info().Msg("Writing to InfluxDB")
 	iw.writeCurrentData(scrape)
 	iw.writeDayData(scrape)
 	iw.writeMonthData(scrape)
 	iw.writeYearData(scrape)
 	iw.writeAPI.Flush()
+	log.Info().Msg("Done Writing to InfluxDB")
 }
 
 func (iw *InfluxDBWriter) writeCurrentData(scrape *SolarZeroScrape) {
+	log.Debug().Msgf("Write to influx Current %s", fmt.Sprint(time.Now()))
 	iw.writeAPI.WritePoint(influxdb2.NewPoint("solar", nil, scrape.currentData.GetInfluxFields(), time.Now()))
 }
 
@@ -86,8 +88,7 @@ func (iw *InfluxDBWriter) writeDayData(scrape *SolarZeroScrape) {
 					},
 					*influxFields,
 					stamp))
-				fmt.Printf("INFO: Write to influx Hour %s\n", fmt.Sprint(stamp))
-
+				log.Debug().Msgf("Write to influx Hour %s", fmt.Sprint(stamp))
 			}
 		}
 	}
@@ -106,7 +107,7 @@ func (iw *InfluxDBWriter) writeMonthData(scrape *SolarZeroScrape) {
 				},
 				*influxFields,
 				stamp))
-			fmt.Printf("INFO: Write to influx Day %s\n", fmt.Sprint(stamp))
+			log.Debug().Msgf("Write to influx Day %s", fmt.Sprint(stamp))
 		}
 	}
 }
@@ -124,7 +125,7 @@ func (iw *InfluxDBWriter) writeYearData(scrape *SolarZeroScrape) {
 				},
 				*influxFields,
 				stamp))
-			fmt.Printf("INFO: Write to influx Month %s\n", fmt.Sprint(stamp))
+			log.Debug().Msgf("Write to influx Month %s", fmt.Sprint(stamp))
 		}
 	}
 }
