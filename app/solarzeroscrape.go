@@ -169,6 +169,7 @@ func (szs *SolarZeroScrape) fetchSalesForceData() bool {
 }
 
 func (szs *SolarZeroScrape) getCookies() bool {
+	szs.reauthenticate = false
 
 	log.Info().Msg("Get Cookies and Login Data")
 
@@ -244,7 +245,6 @@ func (szs *SolarZeroScrape) getCookies() bool {
 					log.Debug().RawJSON("LoginData", []byte(text))
 
 					log.Info().Msg("Get Cookies and Login Data Success")
-					szs.reauthenticate = false
 					return true
 				}
 			}
