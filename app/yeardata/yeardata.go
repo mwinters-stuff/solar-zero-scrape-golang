@@ -19,10 +19,6 @@ func UnmarshalYearData(data []byte) (YearData, error) {
 	return r, err
 }
 
-func (r *YearData) Marshal() ([]byte, error) {
-	return json.Marshal(r)
-}
-
 type YearDatum struct {
 	Month       string   `json:"Month"`
 	SolarUse    *float64 `json:"Solar use"`

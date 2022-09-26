@@ -163,6 +163,17 @@ func (suite *YearDataTestSuite) TestMonthNumber() {
 	}
 }
 
+func (suite *YearDataTestSuite) TestBadMonthNumber() {
+
+	yeardata, err := UnmarshalYearData([]byte(suite.json))
+	assert.Nil(suite.T(), err, "Err is not nil")
+
+	yeardata[0].Month = "blob"
+
+	assert.Panics(suite.T(), func() { yeardata[0].GetMonthNum() })
+
+}
+
 func TestYearTestDataSuite(t *testing.T) {
 	suite.Run(t, new(YearDataTestSuite))
 }
