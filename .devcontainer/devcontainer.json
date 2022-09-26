@@ -17,6 +17,9 @@
 	"containerEnv": {
 		"TZ":"Pacific/Auckland"
 	},
+	"mounts": [
+		"${USER:HOME}/.ssh:/home/vscode/.ssh"
+	],
 
 	// Configure tool-specific properties.
 	"customizations": {
