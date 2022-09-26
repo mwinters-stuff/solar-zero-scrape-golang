@@ -10,62 +10,65 @@ import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/app/config"
-	"github.com/rs/zerolog/log"
+	zerolog "github.com/rs/zerolog/log"
 )
 
 var (
-	InfluxDBNewClient = influxdb2.NewClient
+	Logger = zerolog.Logger
 )
 
 func NewInfluxDBWriter(config *config.Configuration) *InfluxDBWriter {
 	s := &InfluxDBWriter{
 		config: config,
 	}
-
 	return s
 }
 
 type InfluxDBWriter struct {
-	config   *config.Configuration
-	client   influxdb2.Client
-	writeAPI api.WriteAPI
+	config     *config.Configuration
+	client     influxdb2.Client
+	writeAPI   api.WriteAPI
+	WriteError bool
 }
 
-func (iw *InfluxDBWriter) Connect() error {
-	iw.client = InfluxDBNewClient(iw.config.InfluxDB.HostURL, iw.config.InfluxDB.Token)
+func (iw *InfluxDBWriter) Connect(client influxdb2.Client) error {
+	iw.WriteError = false
+	iw.client = client
 	health, _ := iw.client.Health(context.Background())
-	log.Info().Msgf("InfluxDB Health: %s %s %s ", *health.Message, health.Status, *health.Version)
+	Logger.Info().Msgf("InfluxDB Health: %s %s %s ", *health.Message, health.Status, *health.Version)
 	iw.writeAPI = iw.client.WriteAPI(iw.config.InfluxDB.Org, iw.config.InfluxDB.Bucket)
 
 	errorsCh := iw.writeAPI.Errors()
 	// Create go proc for reading and logging errors
 	go func() {
 		for err := range errorsCh {
-			log.Panic().Msgf("InfluxDB Write error: %s", err.Error())
+			Logger.Error().Msgf("InfluxDB Write error: %s", err.Error())
+			iw.WriteError = true
 		}
 	}()
 
 	return nil
 }
 
-func (iw *InfluxDBWriter) WriteData(scrape *SolarZeroScrape) {
-	log.Info().Msg("Writing to InfluxDB")
+func (iw *InfluxDBWriter) WriteData(scrape SolarZeroScrape) {
+	Logger.Info().Msg("Writing to InfluxDB")
 	iw.writeCurrentData(scrape)
 	iw.writeDayData(scrape)
 	iw.writeMonthData(scrape)
 	iw.writeYearData(scrape)
 	iw.writeAPI.Flush()
-	log.Info().Msg("Done Writing to InfluxDB")
+	Logger.Info().Msg("Done Writing to InfluxDB")
 }
 
-func (iw *InfluxDBWriter) writeCurrentData(scrape *SolarZeroScrape) {
-	log.Debug().Msgf("Write to influx Current %s", fmt.Sprint(time.Now()))
-	iw.writeAPI.WritePoint(influxdb2.NewPoint("solar", nil, scrape.currentData.GetInfluxFields(), time.Now()))
+func (iw *InfluxDBWriter) writeCurrentData(scrape SolarZeroScrape) {
+	Logger.Debug().Msgf("Write to influx Current %s", fmt.Sprint(time.Now()))
+	currentData := scrape.CurrentData()
+	iw.writeAPI.WritePoint(influxdb2.NewPoint("solar", nil, currentData.GetInfluxFields(), time.Now()))
 }
 
-func (iw *InfluxDBWriter) writeDayData(scrape *SolarZeroScrape) {
+func (iw *InfluxDBWriter) writeDayData(scrape SolarZeroScrape) {
 
-	for _, hourData := range scrape.dayData {
+	for _, hourData := range scrape.DayData() {
 		influxFields := hourData.GetInfluxFields()
 		if influxFields != nil {
 			hourstr := hourData.Hour
@@ -88,14 +91,14 @@ func (iw *InfluxDBWriter) writeDayData(scrape *SolarZeroScrape) {
 					},
 					*influxFields,
 					stamp))
-				log.Debug().Msgf("Write to influx Hour %s", fmt.Sprint(stamp))
+				Logger.Debug().Msgf("Write to influx Hour %s", fmt.Sprint(stamp))
 			}
 		}
 	}
 }
 
-func (iw *InfluxDBWriter) writeMonthData(scrape *SolarZeroScrape) {
-	for _, dayData := range scrape.monthData {
+func (iw *InfluxDBWriter) writeMonthData(scrape SolarZeroScrape) {
+	for _, dayData := range scrape.MonthData() {
 		influxFields := dayData.GetInfluxFields()
 		if influxFields != nil {
 			t := time.Now()
@@ -107,13 +110,13 @@ func (iw *InfluxDBWriter) writeMonthData(scrape *SolarZeroScrape) {
 				},
 				*influxFields,
 				stamp))
-			log.Debug().Msgf("Write to influx Day %s", fmt.Sprint(stamp))
+			Logger.Debug().Msgf("Write to influx Day %s", fmt.Sprint(stamp))
 		}
 	}
 }
 
-func (iw *InfluxDBWriter) writeYearData(scrape *SolarZeroScrape) {
-	for _, monthData := range scrape.yearData {
+func (iw *InfluxDBWriter) writeYearData(scrape SolarZeroScrape) {
+	for _, monthData := range scrape.YearData() {
 		influxFields := monthData.GetInfluxFields()
 		if influxFields != nil {
 			t := time.Now()
@@ -125,7 +128,7 @@ func (iw *InfluxDBWriter) writeYearData(scrape *SolarZeroScrape) {
 				},
 				*influxFields,
 				stamp))
-			log.Debug().Msgf("Write to influx Month %s", fmt.Sprint(stamp))
+			Logger.Debug().Msgf("Write to influx Month %s", fmt.Sprint(stamp))
 		}
 	}
 }

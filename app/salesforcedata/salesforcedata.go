@@ -14,10 +14,6 @@ func UnmarshalSalesForceData(data []byte) (SalesForceData, error) {
 	return r, err
 }
 
-func (r *SalesForceData) Marshal() ([]byte, error) {
-	return json.Marshal(r)
-}
-
 type SalesForceData struct {
 	Contact     Contact       `json:"contact"`
 	Account     Account       `json:"account"`
