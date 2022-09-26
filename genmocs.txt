@@ -1,0 +1,3 @@
+docker run -v $(pwd):/src -v /home/mathew/src/solar-zero-scrape-golang/internal/mocks/influxdb2:/mnt -w /src vektra/mockery  --all --with-expecter  --output /mnt/
+
+docker run -v $(pwd):/src -w /src vektra/mockery  --all --with-expecter  --output internal/mocks/app

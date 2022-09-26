@@ -16,10 +16,6 @@ func UnmarshalDayData(data []byte) (DayData, error) {
 	return r, err
 }
 
-func (r *DayData) Marshal() ([]byte, error) {
-	return json.Marshal(r)
-}
-
 type DayDatum struct {
 	Hour        string   `json:"Hour"`
 	Export      *float64 `json:"Export"`

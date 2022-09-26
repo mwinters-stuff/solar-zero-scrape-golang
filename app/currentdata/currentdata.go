@@ -14,10 +14,6 @@ func UnmarshalCurrentData(data []byte) (CurrentData, error) {
 	return r, err
 }
 
-func (r *CurrentData) Marshal() ([]byte, error) {
-	return json.Marshal(r)
-}
-
 type CurrentData struct {
 	DeviceStatus    int64   `json:"deviceStatus"`
 	DPowerFlow      int64   `json:"dPowerFlow"`
@@ -44,18 +40,4 @@ func (r *CurrentData) GetInfluxFields() map[string]interface{} {
 		"GridPowerOutage": r.GridPowerOutage,
 		"Temperature":     r.Temperature,
 	}
-}
-
-func (r *CurrentData) Equals(o *CurrentData) bool {
-	return r.DeviceStatus == o.DeviceStatus &&
-		r.DPowerFlow == o.DPowerFlow &&
-		r.Export == o.Export &&
-		r.Import == o.Import &&
-		r.Load == o.Load &&
-		r.Solar == o.Solar &&
-		r.Soc == o.Soc &&
-		r.Charge == o.Charge &&
-		r.GridPowerOutage == o.GridPowerOutage &&
-		r.Temperature == o.Temperature
-
 }
