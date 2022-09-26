@@ -14,16 +14,6 @@ func UnmarshalLoginData(data []byte) (LoginData, error) {
 	return r, err
 }
 
-func (r *LoginData) Marshal() ([]byte, error) {
-	return json.Marshal(r)
-}
-
-func UnmarshalCurrentData(data []byte) (CurrentData, error) {
-	var r CurrentData
-	err := json.Unmarshal(data, &r)
-	return r, err
-}
-
 type LoginData struct {
 	Auth         Auth         `json:"auth"`
 	DeviceID     DeviceID     `json:"deviceID"`

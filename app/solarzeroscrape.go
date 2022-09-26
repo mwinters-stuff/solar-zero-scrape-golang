@@ -26,19 +26,17 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func NewSolarZeroScrape(config *config.Configuration) *SolarZeroScrape {
-	s := &SolarZeroScrape{
-		config:         config,
-		userAttributes: make(map[string]string),
-		salesForceData: salesforcedata.SalesForceData{},
-		reauthenticate: false,
-	}
-
-	return s
+type SolarZeroScrape interface {
+	AuthenticateFully() bool
+	GetData() bool
+	CurrentData() currentdata.CurrentData
+	DayData() daydata.DayData
+	MonthData() monthdata.MonthData
+	YearData() yeardata.YearData
 }
 
-type SolarZeroScrape struct {
-	config         *config.Configuration
+type solarZeroScrapeImpl struct {
+	config         config.Configuration
 	accessToken    string
 	refreshToken   string
 	idToken        string
@@ -56,7 +54,18 @@ type SolarZeroScrape struct {
 	yearData    yeardata.YearData
 }
 
-func (szs *SolarZeroScrape) cognitoAuth() bool {
+func NewSolarZeroScrape(config config.Configuration) SolarZeroScrape {
+	scrape := &solarZeroScrapeImpl{
+		config:         config,
+		userAttributes: make(map[string]string),
+		salesForceData: salesforcedata.SalesForceData{},
+		reauthenticate: false,
+	}
+
+	return scrape
+}
+
+func (szs *solarZeroScrapeImpl) cognitoAuth() bool {
 	log.Info().Msg("INFO: Starting Cognito Authentication")
 	csrp, _ := cognitosrp.NewCognitoSRP(
 		szs.config.SolarZero.Username,
@@ -112,7 +121,7 @@ func (szs *SolarZeroScrape) cognitoAuth() bool {
 	}
 }
 
-func (szs *SolarZeroScrape) getUser() bool {
+func (szs *solarZeroScrapeImpl) getUser() bool {
 	log.Info().Msg("Cognito GetUser")
 
 	getUserOutput, err := szs.cognitoSvc.GetUser(context.Background(), &cip.GetUserInput{
@@ -132,7 +141,7 @@ func (szs *SolarZeroScrape) getUser() bool {
 	return true
 }
 
-func (szs *SolarZeroScrape) fetchSalesForceData() bool {
+func (szs *solarZeroScrapeImpl) fetchSalesForceData() bool {
 	client := &http.Client{}
 
 	log.Info().Msg("Fetch SalesForce Data")
@@ -168,7 +177,7 @@ func (szs *SolarZeroScrape) fetchSalesForceData() bool {
 	return true
 }
 
-func (szs *SolarZeroScrape) getCookies() bool {
+func (szs *solarZeroScrapeImpl) getCookies() bool {
 	szs.reauthenticate = false
 
 	log.Info().Msg("Get Cookies and Login Data")
@@ -262,7 +271,7 @@ func (szs *SolarZeroScrape) getCookies() bool {
 
 }
 
-func (szs *SolarZeroScrape) getWithCookies(url string) ([]byte, error) {
+func (szs *solarZeroScrapeImpl) getWithCookies(url string) ([]byte, error) {
 	log.Debug().Msg("Get Url With Cookies: " + url)
 
 	method := "GET"
@@ -303,7 +312,7 @@ func (szs *SolarZeroScrape) getWithCookies(url string) ([]byte, error) {
 
 }
 
-func (szs *SolarZeroScrape) getCurrentData() bool {
+func (szs *solarZeroScrapeImpl) getCurrentData() bool {
 	log.Info().Msg("Get Current Data")
 	body, err := szs.getWithCookies(fmt.Sprintf("%s/getCurrentData/data?id=%s&api=%s", szs.logindata.Auth.API, szs.logindata.DeviceID.ID, szs.logindata.Auth.EMSAPI))
 	if err != nil {
@@ -320,7 +329,7 @@ func (szs *SolarZeroScrape) getCurrentData() bool {
 	return true
 }
 
-func (szs *SolarZeroScrape) getDayData() bool {
+func (szs *solarZeroScrapeImpl) getDayData() bool {
 	log.Info().Msg("Get Day Data")
 	body, err := szs.getWithCookies(fmt.Sprintf("%s/getDayData/data?id=%s&api=%s", szs.logindata.Auth.API, szs.logindata.DeviceID.ID, szs.logindata.Auth.EMSAPI))
 	if err != nil {
@@ -337,7 +346,7 @@ func (szs *SolarZeroScrape) getDayData() bool {
 	return true
 }
 
-func (szs *SolarZeroScrape) getMonthData() bool {
+func (szs *solarZeroScrapeImpl) getMonthData() bool {
 	log.Info().Msg("Get Month Data")
 	body, err := szs.getWithCookies(fmt.Sprintf("%s/getMonthData/data?id=%s&api=%s", szs.logindata.Auth.API, szs.logindata.DeviceID.ID, szs.logindata.Auth.EMSAPI))
 	if err != nil {
@@ -354,7 +363,7 @@ func (szs *SolarZeroScrape) getMonthData() bool {
 	return true
 }
 
-func (szs *SolarZeroScrape) getYearData() bool {
+func (szs *solarZeroScrapeImpl) getYearData() bool {
 	log.Info().Msg("Get Year Data")
 	body, err := szs.getWithCookies(fmt.Sprintf("%s/getYearData/data?id=%s&api=%s", szs.logindata.Auth.API, szs.logindata.DeviceID.ID, szs.logindata.Auth.EMSAPI))
 	if err != nil {
@@ -371,7 +380,7 @@ func (szs *SolarZeroScrape) getYearData() bool {
 	return true
 }
 
-func (szs *SolarZeroScrape) AuthenticateFully() bool {
+func (szs *solarZeroScrapeImpl) AuthenticateFully() bool {
 	if !szs.cognitoAuth() {
 		return false
 	}
@@ -383,7 +392,7 @@ func (szs *SolarZeroScrape) AuthenticateFully() bool {
 	return szs.getCookies()
 }
 
-func (szs *SolarZeroScrape) GetData() bool {
+func (szs *solarZeroScrapeImpl) GetData() bool {
 	success := szs.getCurrentData()
 	if !success {
 		if szs.reauthenticate {
@@ -443,4 +452,20 @@ func (szs *SolarZeroScrape) GetData() bool {
 	}
 
 	return true
+}
+
+func (szs *solarZeroScrapeImpl) CurrentData() currentdata.CurrentData {
+	return szs.currentData
+}
+
+func (szs *solarZeroScrapeImpl) DayData() daydata.DayData {
+	return szs.dayData
+}
+
+func (szs *solarZeroScrapeImpl) MonthData() monthdata.MonthData {
+	return szs.monthData
+}
+
+func (szs *solarZeroScrapeImpl) YearData() yeardata.YearData {
+	return szs.yearData
 }

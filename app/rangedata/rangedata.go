@@ -16,10 +16,6 @@ func UnmarshalRangeExportData(data []byte) (RangeExportData, error) {
 	return r, err
 }
 
-func (r *RangeExportData) Marshal() ([]byte, error) {
-	return json.Marshal(r)
-}
-
 type RangeExportDatum struct {
 	Date      string  `json:"Date"`
 	SolarUse  float64 `json:"Solar use"`

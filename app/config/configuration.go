@@ -8,8 +8,9 @@ package config
 
 import (
 	"encoding/json"
-	"log"
 	"os"
+
+	"github.com/rs/zerolog/log"
 )
 
 func UnmarshalConfiguration(data []byte) (Configuration, error) {
@@ -18,15 +19,11 @@ func UnmarshalConfiguration(data []byte) (Configuration, error) {
 	return r, err
 }
 
-func (r *Configuration) Marshal() ([]byte, error) {
-	return json.Marshal(r)
-}
-
 func LoadConfiguration(filename string) (Configuration, error) {
 	var c Configuration
 	content, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatal(err)
+		log.Error().Err(err)
 		return c, err
 	}
 
