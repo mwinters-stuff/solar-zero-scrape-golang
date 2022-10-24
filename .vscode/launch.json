@@ -11,6 +11,22 @@
       "mode": "debug",
       "program": "${workspaceFolder}/main.go",
       "args": ["--debug", "--config", "${workspaceFolder}/testconfig.json"]
+    },
+    {
+      "name": "Launch CLI Package",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/api/cmd/solar-zero-scrape-api-server/main.go",
+      "args": ["--port","8080", "--debug", "--config", "${workspaceFolder}/testconfig.json"]
+    },
+    {
+      "name": "Launch CLI Package Help",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/api/cmd/solar-zero-scrape-api-server/main.go",
+      "args": ["--help"]
     }
   ]
 }

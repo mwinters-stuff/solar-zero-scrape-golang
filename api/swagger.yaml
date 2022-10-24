@@ -1,0 +1,69 @@
+info:
+  contact:
+    name: Source Code
+    url: https://gitea.winters.org.nz/mathew/solar-zero-scrape-golang
+  description: Solar Sero Scrape.
+  license:
+    name: Apache License
+    url: https://gitea.winters.org.nz/mathew/solar-zero-scrape-golang/src/branch/master/LICENSE
+  title: Solar Zero Scrape API
+  version: "2.0"
+basePath: /
+paths:
+  /:
+    get:
+      description: gets latest data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Index
+      tags:
+      - HTTP API
+  /healthz:
+    get:
+      consumes:
+      - application/json
+      description: used by Kubernetes liveness probe
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Liveness check
+      tags:
+      - Kubernetes
+  /panic:
+    get:
+      description: crashes the process with exit code 255
+      responses:
+        "200":
+          description: OK
+          schema: 
+            type: string
+      summary: Panic
+      tags:
+      - HTTP API
+  /readyz:
+    get:
+      consumes:
+      - application/json
+      description: used by Kubernetes readiness probe
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Readiness check
+      tags:
+      - Kubernetes
+schemes:
+- http
+swagger: "2.0"
