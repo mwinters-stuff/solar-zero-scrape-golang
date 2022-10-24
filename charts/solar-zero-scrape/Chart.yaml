@@ -1,9 +1,9 @@
 ---
 apiVersion: v2
-appVersion: 1.0.0
+appVersion: 3.0.0
 description: An image and helm chart for solar-zero-scrape
 name: solar-zero-scrape
-version: 2.0.0
+version: 3.0.0
 kubeVersion: ">=1.16.0-0"
 keywords:
   - solar-zero-scrape
@@ -13,7 +13,7 @@ sources:
 maintainers:
   - name: mwinters
     email: mathew@winters.nz
-dependencies:
-  - name: common
-    repository: https://library-charts.k8s-at-home.com
-    version: 4.4.2
+# dependencies:
+#   - name: common
+#     repository: http://harbor.harbor.svc/chartrepo/k8s-at-winters
+#     version: latest
