@@ -12,6 +12,10 @@ import (
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/solarzero/jsontypes"
 )
 
+var (
+	NewAWSInterface = NewAWSInterfaceImpl
+)
+
 type AWSInterface interface {
 	Authenticate() bool
 	GetUser() bool
@@ -28,7 +32,7 @@ type awsInterfaceImpl struct {
 	userAttributes map[string]string
 }
 
-func NewAWSInterface(config *jsontypes.Configuration) AWSInterface {
+func NewAWSInterfaceImpl(config *jsontypes.Configuration) AWSInterface {
 	s := &awsInterfaceImpl{
 		config:         config,
 		userAttributes: make(map[string]string),

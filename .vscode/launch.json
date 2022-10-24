@@ -17,15 +17,23 @@
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceFolder}/api/cmd/solar-zero-scrape-api-server/main.go",
-      "args": ["--port","8080", "--debug", "--config", "${workspaceFolder}/testconfig.json"]
+      "program": "${workspaceFolder}/cmd/solar-zero-scrape-api-server/main.go",
+      "args": ["--port","8080", "--host", "0.0.0.0",
+         "--debug", 
+        "--solarzero-username", "mathew@winters.nz",
+        "--solarzero-password", "WxYcpTw99#24XNL",
+        "--influx-token", "7yWgIlQPe_jjueBDa4w2uBq7pe1-I9qLxRfDgMKnN2DzhfvBSovTlBoMSfRFkXcOLHxuCSksjw62I99JujETrA==",
+        "--influx-host-url", "https://influxdb.winters.org.nz",
+        "--influx-org", "winters.nz",
+        "--influx-bucket", "test"
+    ]
     },
     {
       "name": "Launch CLI Package Help",
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceFolder}/api/cmd/solar-zero-scrape-api-server/main.go",
+      "program": "${workspaceFolder}/cmd/solar-zero-scrape-api-server/main.go",
       "args": ["--help"]
     }
   ]

@@ -12,6 +12,10 @@ import (
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/solarzero/jsontypes"
 )
 
+var (
+	NewInfluxDBWriter = NewInfluxDBWriterImpl
+)
+
 type InfluxDBWriter interface {
 	Connect(client influxdb2.Client) error
 
@@ -31,7 +35,7 @@ type influxDBWriterImpl struct {
 	writeError bool
 }
 
-func NewInfluxDBWriter(config *jsontypes.Configuration) InfluxDBWriter {
+func NewInfluxDBWriterImpl(config *jsontypes.Configuration) InfluxDBWriter {
 	s := &influxDBWriterImpl{
 		config: config,
 	}

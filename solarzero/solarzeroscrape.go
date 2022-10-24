@@ -54,16 +54,33 @@ type SolarZeroScrapeImpl struct {
 	ready                  bool
 }
 
-func NewSolarZeroScrape(options *SolarZeroOptions) SolarZeroScrape {
+func NewSolarZeroScrape(options *AllSolarZeroOptions) SolarZeroScrape {
+	config := jsontypes.Configuration{}
 
-	config, err := jsontypes.LoadConfiguration(options.Config)
-	if err != nil {
-		log.Panic().Msg("LoadConfiguration " + err.Error())
+	if options.SolarZeroOptions.Config != "" {
+		var err error
+		config, err = jsontypes.LoadConfiguration(options.SolarZeroOptions.Config)
+		if err != nil {
+			log.Panic().Msg("LoadConfiguration " + err.Error())
+		}
+	} else {
+		config.SolarZero.Username = options.SolarZeroOptions.Username
+		config.SolarZero.Password = options.SolarZeroOptions.Password
+		config.SolarZero.UserPoolID = options.OtherOptions.UserPoolId
+		config.SolarZero.ClientID = options.OtherOptions.ClientId
+		config.SolarZero.API.Region = options.OtherOptions.ApiRegion
+		config.SolarZero.API.APIKey = options.OtherOptions.ApiKey
+		config.SolarZero.API.APIGatewayURL = options.OtherOptions.ApiGatewayURL
+		config.SolarZero.API.SolarZeroAPIAddress = options.OtherOptions.ApiSolarZeroApiAddress
 
+		config.InfluxDB.HostURL = options.InfluxDBOptions.HostURL
+		config.InfluxDB.Token = options.InfluxDBOptions.Token
+		config.InfluxDB.Org = options.InfluxDBOptions.Org
+		config.InfluxDB.Bucket = options.InfluxDBOptions.Bucket
 	}
 
 	influxdb := NewInfluxDBWriter(&config)
-	err = influxdb.Connect(influxdb2.NewClient(config.InfluxDB.HostURL, config.InfluxDB.Token))
+	err := influxdb.Connect(influxdb2.NewClient(config.InfluxDB.HostURL, config.InfluxDB.Token))
 	if err != nil {
 		log.Panic().Msgf("InfluxDB Connect %s", err.Error())
 	}
@@ -77,7 +94,7 @@ func NewSolarZeroScrape(options *SolarZeroOptions) SolarZeroScrape {
 		// userAttributes: make(map[string]string),
 		salesForceData:         jsontypes.SalesForceData{},
 		reauthenticate:         false,
-		lastGoodWriteTimestamp: time.Now().Add(time.Hour - 2),
+		lastGoodWriteTimestamp: time.Unix(0, 0),
 		ready:                  false,
 	}
 
@@ -89,7 +106,7 @@ func (szs *SolarZeroScrapeImpl) Start() {
 
 	for szs.AuthenticateFully() {
 		s.Every(5).Minutes().Do(func() {
-			log.Info().Msgf("Get Data at ", time.Now())
+			log.Info().Msgf("Get Data at %s", time.Now())
 			success := szs.GetData()
 			if success {
 				szs.influxdb.WriteData(szs)
