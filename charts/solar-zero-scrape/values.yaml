@@ -5,6 +5,8 @@
 # https://github.com/k8s-at-home/library-charts/tree/main/charts/stable/common/values.yaml
 #
 
+replicaCount: 1
+
 image:
   # -- image repository
   repository: harbor.winters.org.nz/library/solar-zero-scrape
@@ -24,62 +26,94 @@ imageCredentials:
 nameOverride: "solar-zero-scrape"
 fullnameOverride: "solar-zero-scrape"
 
+service:
+  enabled: true
+  annotations: {}
+  type: ClusterIP
+  httpPort: 9898
+  externalPort: 9898
+
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  enabled: false
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+  # List of image pull secrets if pulling from private registries
+  imagePullSecrets: []
+
+
+securityContext: {}
+
+resources:
+  limits:
+  requests:
+    cpu: 1m
+    memory: 16Mi
+
+
+# https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+probes:
+  readiness:
+    initialDelaySeconds: 1
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    periodSeconds: 10
+  liveness:
+    initialDelaySeconds: 1
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    periodSeconds: 10
+
+
+# enable tls on the podinfo service
+tls:
+  enabled: false
+  # the name of the secret used to mount the certificate key pair
+  secretName:
+  # the path where the certificate key pair will be mounted
+  certPath: /data/cert
+  # the port used to host the tls endpoint on the service
+  port: 9899
+  # the port used to bind the tls port to the host
+  # NOTE: requires privileged container with NET_BIND_SERVICE capability -- this is useful for testing
+  # in local clusters such as kind without port forwarding
+  hostPort:
+
+# create a certificate manager certificate (cert-manager required)
+certificate:
+  create: false
+  # the issuer used to issue the certificate
+  issuerRef:
+    kind: ClusterIssuer
+    name: self-signed
+  # the hostname / subject alternative names for the certificate
+  dnsNames:
+    - solar-zero-scrape
+
+solarZero:
+  username: test@user
+  password: password
+
+influxdb:
+  hostUrl: influx:2922
+  token: thetoken
+  org: example.org
+  bucket: solar-zero
+
+otherConfig:
+  UserPoolId: xx
+  ClientId: xx
+  ApiRegion: xx
+  ApiGatewayURL: xx
+  ApiKey: xx
+  ApiSolarZeroApiAddress: xx
+
 
 # @default -- See below
 env:
   # -- Set the container timezone
   TZ: Pacific/Auckland
-
-#-- Configures service settings for the chart.
-# @default -- See values.yaml
-service:
-  main:
-    enabled: false
-
-ingress:
-  # -- Enable and configure ingress settings for the chart under this key.
-  # @default -- See values.yaml
-  main:
-    enabled: false
-
-# -- Configure persistence, config for where the yaml and custom script live..
-# @default -- See values.yaml
-persistence:
-  config:
-    enabled: true
-    type: configMap
-    name: solar-zero-scrape-config
-
-
-configmap:
-  config:
-    enabled: true
-    data:
-      solar-zero-scrape.json: |
-        {
-          "DebugLog":"debug.log",
-          "SolarZero": {
-              "Username": "your@email",
-              "Password": "password",
-              "UserPoolId": "us-west-2_NoMpv1v1A",
-              "ClientId": "6mgtqq7vvf7eo3r3qrsg6kl1tf",
-              "API": {
-                "Region" :"us-west-2",
-                "ApiGatewayURL": "https://d6nfzye2cb.execute-api.us-west-2.amazonaws.com",
-                "ApiKey": "mA0UW2ldUUQBY3e9bZWq9lCeKQUNCZC9oKidvdbb",
-                "SolarZeroApiAddress": "solarzero.pnz.technology"
-              }
-          },
-          "InfluxDB":{
-              "Token": "token",
-              "HostUrl": "https://influxdb.example.com",
-              "Org": "example.com",
-              "Bucket": "solarzero/autogen"
-          },
-          "MQTT": {
-            "URL":"mqtt://example.com:1883",
-            "Username": "solarzero",
-            "Password": "zerosolar",
-            "BaseTopic":"solar-zero"
-          }
-        }
