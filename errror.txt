@@ -1,0 +1,9 @@
+{"level":"info","time":"2022-10-19T06:32:27+13:00","message":"Writing to InfluxDB"}
+{"level":"info","time":"2022-10-19T06:32:28+13:00","message":"Done Writing to InfluxDB"}
+{"level":"info","time":"2022-10-19T06:37:22+13:00","message":"Get Data at %!(EXTRA time.Time=2022-10-19 06:37:22.682741165 +1300 NZDT m=+220522.046962905)"}
+{"level":"info","time":"2022-10-19T06:37:22+13:00","message":"Get Current Data"}
+{"level":"error","time":"2022-10-19T06:37:26+13:00","message":"Get Url With Cookies (Status Code): 500 Internal Server Error"}
+{"level":"error","time":"2022-10-19T06:37:26+13:00","message":"Get Current Data (getWithCookies): needs reauthentication"}
+{"level":"info","time":"2022-10-19T06:37:26+13:00","message":"Get Cookies and Login Data"}
+{"level":"error","time":"2022-10-19T06:37:55+13:00","message":"Get Cookies and Login Data (ErrorToken): EOF"}
+{"level":"error","time":"2022-10-19T06:37:55+13:00","message":"GetData Failed, Reauthenticating"}
