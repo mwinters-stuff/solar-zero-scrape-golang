@@ -9,7 +9,7 @@ steps:
   - go get github.com/stretchr/gorc
   - go install github.com/stretchr/gorc
   - gorc test
-  - go build -o solar-zero-scrape
+  - go build -o solar-zero-scrape api/cmd/solar-zero-scrape-api-server/main.go
 
 - name: build-dev-docker-image
   image: plugins/docker
@@ -22,7 +22,7 @@ steps:
     registry: harbor.winters.org.nz
     tags: 
       - latest
-      - 0.3.${DRONE_BUILD_NUMBER}-dev
+      - 0.4.${DRONE_BUILD_NUMBER}-dev
   depends_on:
     - build-go
   when:

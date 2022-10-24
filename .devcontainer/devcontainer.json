@@ -18,7 +18,7 @@
 		"TZ":"Pacific/Auckland"
 	},
 	"mounts": [
-		"${USER:HOME}/.ssh:/home/vscode/.ssh"
+		"type=bind,source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh"
 	],
 
 	// Configure tool-specific properties.
