@@ -23,19 +23,35 @@ import (
 //go:generate swagger generate server --target ../../api --name SolarZeroScrape --spec ../swagger.yaml --principal interface{}
 
 func configureFlags(api *operations.SolarZeroScrapeAPIAPI) {
-	opts := &solarzero.SolarZeroOptions{}
+
+	opts := &solarzero.AllSolarZeroOptions{}
+
 	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, swag.CommandLineOptionsGroup{
 		ShortDescription: "config",
 		LongDescription:  "Solar Zero Config",
-		Options:          opts,
+		Options:          &opts.SolarZeroOptions,
+	})
+	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, swag.CommandLineOptionsGroup{
+		ShortDescription: "influxdb",
+		LongDescription:  "Influx DB Config",
+		Options:          &opts.InfluxDBOptions,
+	})
+	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, swag.CommandLineOptionsGroup{
+		ShortDescription: "other",
+		LongDescription:  "Other Options",
+		Options:          &opts.OtherOptions,
 	})
 }
 
 func configureAPI(api *operations.SolarZeroScrapeAPIAPI) http.Handler {
-	cfg := api.CommandLineOptionsGroups[0].Options.(*solarzero.SolarZeroOptions)
+
+	opts := &solarzero.AllSolarZeroOptions{}
+	opts.SolarZeroOptions = *api.CommandLineOptionsGroups[0].Options.(*solarzero.SolarZeroOptions)
+	opts.InfluxDBOptions = *api.CommandLineOptionsGroups[1].Options.(*solarzero.InfluxDBOptions)
+	opts.OtherOptions = *api.CommandLineOptionsGroups[2].Options.(*solarzero.OtherOptions)
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	if cfg.Debug {
+	if opts.SolarZeroOptions.Debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
@@ -47,7 +63,7 @@ func configureAPI(api *operations.SolarZeroScrapeAPIAPI) http.Handler {
 	// To continue using redoc as your UI, uncomment the following line
 	// api.UseRedoc()
 
-	solarZeroScrape := solarzero.NewSolarZeroScrape(cfg)
+	solarZeroScrape := solarzero.NewSolarZeroScrape(opts)
 	go solarZeroScrape.Start()
 
 	api.JSONConsumer = runtime.JSONConsumer()
