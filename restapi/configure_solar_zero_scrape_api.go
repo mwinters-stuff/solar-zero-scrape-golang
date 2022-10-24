@@ -14,9 +14,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/mwinters-stuff/solar-zero-scrape-golang/api/restapi/operations"
-	"github.com/mwinters-stuff/solar-zero-scrape-golang/api/restapi/operations/http_api"
-	"github.com/mwinters-stuff/solar-zero-scrape-golang/api/restapi/operations/kubernetes"
+	"github.com/mwinters-stuff/solar-zero-scrape-golang/restapi/operations"
+	"github.com/mwinters-stuff/solar-zero-scrape-golang/restapi/operations/http_api"
+	"github.com/mwinters-stuff/solar-zero-scrape-golang/restapi/operations/kubernetes"
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/solarzero"
 )
 

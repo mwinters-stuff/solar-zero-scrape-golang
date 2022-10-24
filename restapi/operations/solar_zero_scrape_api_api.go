@@ -19,8 +19,8 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	"github.com/mwinters-stuff/solar-zero-scrape-golang/api/restapi/operations/http_api"
-	"github.com/mwinters-stuff/solar-zero-scrape-golang/api/restapi/operations/kubernetes"
+	"github.com/mwinters-stuff/solar-zero-scrape-golang/restapi/operations/http_api"
+	"github.com/mwinters-stuff/solar-zero-scrape-golang/restapi/operations/kubernetes"
 )
 
 // NewSolarZeroScrapeAPIAPI creates a new SolarZeroScrapeAPI instance
