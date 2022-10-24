@@ -94,7 +94,7 @@ func NewSolarZeroScrape(options *AllSolarZeroOptions) SolarZeroScrape {
 		// userAttributes: make(map[string]string),
 		salesForceData:         jsontypes.SalesForceData{},
 		reauthenticate:         false,
-		lastGoodWriteTimestamp: time.Unix(0, 0),
+		lastGoodWriteTimestamp: time.Now(),
 		ready:                  false,
 	}
 
@@ -102,6 +102,8 @@ func NewSolarZeroScrape(options *AllSolarZeroOptions) SolarZeroScrape {
 }
 
 func (szs *SolarZeroScrapeImpl) Start() {
+	szs.ready = true
+
 	s := gocron.NewScheduler(time.Local)
 
 	for szs.AuthenticateFully() {
@@ -111,7 +113,6 @@ func (szs *SolarZeroScrapeImpl) Start() {
 			if success {
 				szs.influxdb.WriteData(szs)
 				szs.lastGoodWriteTimestamp = time.Now()
-				szs.ready = true
 			} else {
 				log.Error().Msg("GetData Failed, Reauthenticating")
 				s.Stop()
