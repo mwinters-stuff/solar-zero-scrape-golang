@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mwinters-stuff/solar-zero-scrape-golang/app/jsontypes"
+	"github.com/mwinters-stuff/solar-zero-scrape-golang/solarzero/jsontypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

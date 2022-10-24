@@ -42,6 +42,8 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
+	github.com/stretchr/commander v0.0.0-20130925004555-18f86d1c1da1 // indirect
+	github.com/stretchr/gorc v0.0.0-20130924145046-6dc9c25595e6 // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect

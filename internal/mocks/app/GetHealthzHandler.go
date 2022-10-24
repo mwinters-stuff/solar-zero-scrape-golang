@@ -4,7 +4,7 @@ package mocks
 
 import (
 	middleware "github.com/go-openapi/runtime/middleware"
-	kubernetes "github.com/mwinters-stuff/solar-zero-scrape-golang/api/restapi/operations/kubernetes"
+	kubernetes "github.com/mwinters-stuff/solar-zero-scrape-golang/restapi/operations/kubernetes"
 
 	mock "github.com/stretchr/testify/mock"
 )

@@ -4,7 +4,7 @@ package mocks
 
 import (
 	middleware "github.com/go-openapi/runtime/middleware"
-	http_api "github.com/mwinters-stuff/solar-zero-scrape-golang/api/restapi/operations/http_api"
+	http_api "github.com/mwinters-stuff/solar-zero-scrape-golang/restapi/operations/http_api"
 
 	mock "github.com/stretchr/testify/mock"
 )

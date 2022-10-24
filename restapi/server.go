@@ -24,7 +24,7 @@ import (
 	flags "github.com/jessevdk/go-flags"
 	"golang.org/x/net/netutil"
 
-	"github.com/mwinters-stuff/solar-zero-scrape-golang/api/restapi/operations"
+	"github.com/mwinters-stuff/solar-zero-scrape-golang/restapi/operations"
 )
 
 const (
