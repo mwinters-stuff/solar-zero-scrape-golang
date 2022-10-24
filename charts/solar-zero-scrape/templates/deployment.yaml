@@ -5,9 +5,8 @@ metadata:
   labels:
     {{- include "solar-zero-scrape.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.hpa.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- end }}
+
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -25,6 +24,10 @@ spec:
         {{- end }}
     spec:
       terminationGracePeriodSeconds: 30
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ template "solar-zero-scrape.serviceAccountName" . }}
       {{- end }}
@@ -53,18 +56,18 @@ spec:
             {{- if .Values.tls.enabled }}
             - --secure-port={{ .Values.tls.port }}
             {{- end }}
-            {{- if .Values.tls.certPath }}
-            - --cert-path={{ .Values.tls.certPath }}
-            {{- end }}
+            # {{- if .Values.tls.certPath }}
+            # - --cert-path={{ .Values.tls.certPath }}
+            # {{- end }}
             {{- if .Values.logLevel }}
             - --level={{ .Values.logLevel }}
             {{- end }}
 
             {{- if .Values.solarZero.username }}
-            - --solar-zero-username={{ .Values.solarzero.username }}
+            - --solarzero-username={{ .Values.solarzero.username }}
             {{- end }}
             {{- if .Values.solarZero.password }}
-            - --solar-zero-username={{ .Values.solarzero.password }}
+            - --solarzero-password={{ .Values.solarzero.password }}
             {{- end }}
             {{- if .Values.influxdb.hostUrl }}
             - --influx-host-url={{ .Values.influxdb.hostUrl }}
@@ -95,32 +98,26 @@ spec:
               {{- end }}
             {{- end }}
           livenessProbe:
-            exec:
-              command:
-              - podcli
-              - check
-              - http
-              - localhost:{{ .Values.service.httpPort | default 9898 }}/healthz
+            httpGet:
+                path: /healthz
+                port: {{ .Values.service.httpPort | default 9898 }}
             {{- with .Values.probes.liveness }}
-            initialDelaySeconds: {{ .initialDelaySeconds | default 1 }}
+            initialDelaySeconds: {{ .initialDelaySeconds | default 10 }}
             timeoutSeconds: {{ .timeoutSeconds | default 5 }}
             failureThreshold: {{ .failureThreshold | default 3 }}
             successThreshold: {{ .successThreshold | default 1 }}
-            periodSeconds: {{ .periodSeconds | default 10 }}
+            periodSeconds: {{ .periodSeconds | default 60 }}
             {{- end }}
           readinessProbe:
-            exec:
-              command:
-              - podcli
-              - check
-              - http
-              - localhost:{{ .Values.service.httpPort | default 9898 }}/readyz
+            httpGet:
+                path: /readyz
+                port: {{ .Values.service.httpPort | default 9898 }}
             {{- with .Values.probes.readiness }}
-            initialDelaySeconds: {{ .initialDelaySeconds | default 1 }}
+            initialDelaySeconds: {{ .initialDelaySeconds | default 10 }}
             timeoutSeconds: {{ .timeoutSeconds | default 5 }}
             failureThreshold: {{ .failureThreshold | default 3 }}
             successThreshold: {{ .successThreshold | default 1 }}
-            periodSeconds: {{ .periodSeconds | default 10 }}
+            periodSeconds: {{ .periodSeconds | default 60 }}
             {{- end }}
           volumeMounts:
           - name: data
