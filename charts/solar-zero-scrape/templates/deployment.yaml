@@ -82,6 +82,19 @@ spec:
             - --influx-bucket={{ .Values.influxdb.bucket }}
             {{- end }}
 
+            {{- if .Values.mqtt.hosturl }}
+            - --mqtt-server-url={{ .Values.mqtt.hosturl }}
+            {{- end }}
+            {{- if .Values.mqtt.topic }}
+            - --mqtt-topic={{ .Values.mqtt.topc }}
+            {{- end }}
+            {{- if .Values.mqtt.username }}
+            - --mqtt-username={{ .Values.mqtt.username }}
+            {{- end }}
+            {{- if .Values.mqtt.password }}
+            - --mqtt-password={{ .Values.mqtt.password }}
+            {{- end }}
+
           ports:
             - name: http
               containerPort: {{ .Values.service.httpPort | default 9898 }}

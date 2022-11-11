@@ -25,7 +25,11 @@
         "--influx-token", "7yWgIlQPe_jjueBDa4w2uBq7pe1-I9qLxRfDgMKnN2DzhfvBSovTlBoMSfRFkXcOLHxuCSksjw62I99JujETrA==",
         "--influx-host-url", "https://influxdb.winters.org.nz",
         "--influx-org", "winters.nz",
-        "--influx-bucket", "test"
+        "--influx-bucket", "test",
+        "--mqtt-server-url","mqtt://192.168.30.14:1883",
+        "--mqtt-username","solarzero",
+        "--mqtt-password","zerosolar",
+        "--mqtt-topic","solar-zero-test"
     ]
     },
     {
