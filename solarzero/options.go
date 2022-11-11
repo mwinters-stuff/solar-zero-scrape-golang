@@ -15,6 +15,13 @@ type InfluxDBOptions struct {
 	Bucket  string `long:"influx-bucket" description:"Influx Bucket" `
 }
 
+type MQTTOptions struct {
+	ServerURL string `long:"mqtt-server-url" description:"MQTT Server URL" `
+	Topic     string `long:"mqtt-topic" description:"MQTT Topic" `
+	Username  string `long:"mqtt-username" description:"MQTT Username" `
+	Password  string `long:"mqtt-password" description:"MQTT Password" `
+}
+
 type OtherOptions struct {
 	UserPoolId             string `long:"user-pool-id" default:"us-west-2_NoMpv1v1A"`
 	ClientId               string `long:"client-id" default:"6mgtqq7vvf7eo3r3qrsg6kl1tf"`
@@ -27,5 +34,6 @@ type OtherOptions struct {
 type AllSolarZeroOptions struct {
 	SolarZeroOptions SolarZeroOptions
 	InfluxDBOptions  InfluxDBOptions
+	MQTTOptions      MQTTOptions
 	OtherOptions     OtherOptions
 }
