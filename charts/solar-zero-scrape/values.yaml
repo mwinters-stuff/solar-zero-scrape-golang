@@ -104,6 +104,12 @@ influxdb:
   org: example.org
   bucket: solar-zero
 
+mqtt:
+  hostUrl: mqtt://mqtt.org:1883
+  topic: solar-zero
+  username: bob
+  password: bobs
+
 otherConfig:
   UserPoolId: xx
   ClientId: xx

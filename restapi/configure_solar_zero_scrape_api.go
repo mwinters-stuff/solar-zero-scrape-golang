@@ -37,6 +37,11 @@ func configureFlags(api *operations.SolarZeroScrapeAPIAPI) {
 		Options:          &opts.InfluxDBOptions,
 	})
 	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, swag.CommandLineOptionsGroup{
+		ShortDescription: "mqtt",
+		LongDescription:  "MQTT Options",
+		Options:          &opts.MQTTOptions,
+	})
+	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, swag.CommandLineOptionsGroup{
 		ShortDescription: "other",
 		LongDescription:  "Other Options",
 		Options:          &opts.OtherOptions,
@@ -48,7 +53,8 @@ func configureAPI(api *operations.SolarZeroScrapeAPIAPI) http.Handler {
 	opts := &solarzero.AllSolarZeroOptions{}
 	opts.SolarZeroOptions = *api.CommandLineOptionsGroups[0].Options.(*solarzero.SolarZeroOptions)
 	opts.InfluxDBOptions = *api.CommandLineOptionsGroups[1].Options.(*solarzero.InfluxDBOptions)
-	opts.OtherOptions = *api.CommandLineOptionsGroups[2].Options.(*solarzero.OtherOptions)
+	opts.MQTTOptions = *api.CommandLineOptionsGroups[2].Options.(*solarzero.MQTTOptions)
+	opts.OtherOptions = *api.CommandLineOptionsGroups[3].Options.(*solarzero.OtherOptions)
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if opts.SolarZeroOptions.Debug {
