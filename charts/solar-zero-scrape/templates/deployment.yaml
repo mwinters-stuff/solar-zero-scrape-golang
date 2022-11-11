@@ -38,7 +38,7 @@ spec:
           {{- if .Values.securityContext }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          {{- else if (or .Values.service.hostPort .Values.tls.hostPort) }}
+          {{- else if .Values.service.hostPort }}
           securityContext:
             allowPrivilegeEscalation: true
             capabilities:
@@ -53,12 +53,6 @@ spec:
             {{- if .Values.host }}
             - --host={{ .Values.host }}
             {{- end }}
-            {{- if .Values.tls.enabled }}
-            - --secure-port={{ .Values.tls.port }}
-            {{- end }}
-            # {{- if .Values.tls.certPath }}
-            # - --cert-path={{ .Values.tls.certPath }}
-            # {{- end }}
             {{- if .Values.logLevel }}
             - --level={{ .Values.logLevel }}
             {{- end }}
@@ -82,11 +76,11 @@ spec:
             - --influx-bucket={{ .Values.influxdb.bucket }}
             {{- end }}
 
-            {{- if .Values.mqtt.hosturl }}
-            - --mqtt-server-url={{ .Values.mqtt.hosturl }}
+            {{- if .Values.mqtt.hostUrl }}
+            - --mqtt-server-url={{ .Values.mqtt.hostUrl }}
             {{- end }}
             {{- if .Values.mqtt.topic }}
-            - --mqtt-topic={{ .Values.mqtt.topc }}
+            - --mqtt-topic={{ .Values.mqtt.topic }}
             {{- end }}
             {{- if .Values.mqtt.username }}
             - --mqtt-username={{ .Values.mqtt.username }}
@@ -102,14 +96,6 @@ spec:
               {{- if .Values.service.hostPort }}
               hostPort: {{ .Values.service.hostPort }}
               {{- end }}
-            {{- if .Values.tls.enabled }}
-            - name: https
-              containerPort: {{ .Values.tls.port | default 9899 }}
-              protocol: TCP
-              {{- if .Values.tls.hostPort }}
-              hostPort: {{ .Values.tls.hostPort }}
-              {{- end }}
-            {{- end }}
           livenessProbe:
             httpGet:
                 path: /healthz
@@ -132,14 +118,6 @@ spec:
             successThreshold: {{ .successThreshold | default 1 }}
             periodSeconds: {{ .periodSeconds | default 60 }}
             {{- end }}
-          volumeMounts:
-          - name: data
-            mountPath: /data
-          {{- if .Values.tls.enabled }}
-          - name: tls
-            mountPath: {{ .Values.tls.certPath | default "/data/cert" }}
-            readOnly: true
-          {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- with .Values.nodeSelector }}
@@ -154,11 +132,3 @@ spec:
       tolerations:
 {{ toYaml . | indent 8 }}
     {{- end }}
-      volumes:
-      - name: data
-        emptyDir: {}
-      {{- if .Values.tls.enabled }}
-      - name: tls
-        secret:
-          secretName: {{ template "solar-zero-scrape.tlsSecretName" . }}
-      {{- end }}
