@@ -11,7 +11,6 @@ import (
 	"github.com/go-co-op/gocron"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/solarzero/jsontypes"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/net/html"
 )
 
@@ -40,6 +39,7 @@ type SolarZeroScrapeImpl struct {
 	reauthenticate bool
 
 	influxdb InfluxDBWriter
+	mqtt     MQTTClient
 
 	logindata jsontypes.LoginData
 
@@ -61,7 +61,7 @@ func NewSolarZeroScrape(options *AllSolarZeroOptions) SolarZeroScrape {
 		var err error
 		config, err = jsontypes.LoadConfiguration(options.SolarZeroOptions.Config)
 		if err != nil {
-			log.Panic().Msg("LoadConfiguration " + err.Error())
+			Logger.Panic().Msg("LoadConfiguration " + err.Error())
 		}
 	} else {
 		config.SolarZero.Username = options.SolarZeroOptions.Username
@@ -77,20 +77,36 @@ func NewSolarZeroScrape(options *AllSolarZeroOptions) SolarZeroScrape {
 		config.InfluxDB.Token = options.InfluxDBOptions.Token
 		config.InfluxDB.Org = options.InfluxDBOptions.Org
 		config.InfluxDB.Bucket = options.InfluxDBOptions.Bucket
+
+		config.Mqtt.URL = options.MQTTOptions.ServerURL
+		config.Mqtt.Username = options.MQTTOptions.Username
+		config.Mqtt.Password = options.MQTTOptions.Password
+		config.Mqtt.BaseTopic = options.MQTTOptions.Topic
+
 	}
 
 	influxdb := NewInfluxDBWriter(&config)
 	err := influxdb.Connect(influxdb2.NewClient(config.InfluxDB.HostURL, config.InfluxDB.Token))
 	if err != nil {
-		log.Panic().Msgf("InfluxDB Connect %s", err.Error())
+		Logger.Panic().Msgf("InfluxDB Connect %s", err.Error())
 	}
 
-	log.Info().Msg("Authenticating")
+	var mqtt MQTTClient
+	if config.Mqtt.URL != "" {
+		mqtt = NewMQTTClient(&config)
+		err = mqtt.Connect()
+		if err != nil {
+			Logger.Panic().Msgf("MQTT Connect %s", err.Error())
+		}
+	}
+
+	Logger.Info().Msg("Authenticating")
 
 	scrape := &SolarZeroScrapeImpl{
 		awsInterface: NewAWSInterface(&config),
 		config:       config,
 		influxdb:     influxdb,
+		mqtt:         mqtt,
 		// userAttributes: make(map[string]string),
 		salesForceData:         jsontypes.SalesForceData{},
 		reauthenticate:         false,
@@ -108,19 +124,22 @@ func (szs *SolarZeroScrapeImpl) Start() {
 
 	for szs.AuthenticateFully() {
 		s.Every(5).Minutes().Do(func() {
-			log.Info().Msgf("Get Data at %s", time.Now())
+			Logger.Info().Msgf("Get Data at %s", time.Now())
 			success := szs.GetData()
 			if success {
 				szs.influxdb.WriteData(szs)
 				szs.lastGoodWriteTimestamp = time.Now()
+				if szs.mqtt != nil {
+					szs.mqtt.WriteData(szs)
+				}
 			} else {
-				log.Error().Msg("GetData Failed, Reauthenticating")
+				Logger.Error().Msg("GetData Failed, Reauthenticating")
 				s.Stop()
 			}
 		})
 		s.StartBlocking()
 	}
-	log.Error().Msg("AuthenicateFully Failed, Exiting")
+	Logger.Error().Msg("AuthenicateFully Failed, Exiting")
 }
 
 func (szs *SolarZeroScrapeImpl) cognitoAuth() bool {
