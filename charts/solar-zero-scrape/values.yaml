@@ -15,6 +15,13 @@ image:
   # -- image pull policy
   pullPolicy: IfNotPresent
 
+imagePullSecrets: 
+  - name: solar-zero-scrape-pull-secret
+imageCredentials:
+  registry: harbor.winters.org.nz
+  username: robot$github
+  password: OFKlOP9HKJrCknf18tgHwGwBfw4nq6GG
+  email: mathew@winters.nz
 
 nameOverride: "solar-zero-scrape"
 fullnameOverride: "solar-zero-scrape"
