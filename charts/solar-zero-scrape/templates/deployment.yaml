@@ -64,10 +64,10 @@ spec:
             {{- end }}
 
             {{- if .Values.solarZero.username }}
-            - --solarzero-username={{ .Values.solarzero.username }}
+            - --solarzero-username={{ .Values.solarZero.username }}
             {{- end }}
             {{- if .Values.solarZero.password }}
-            - --solarzero-password={{ .Values.solarzero.password }}
+            - --solarzero-password={{ .Values.solarZero.password }}
             {{- end }}
             {{- if .Values.influxdb.hostUrl }}
             - --influx-host-url={{ .Values.influxdb.hostUrl }}

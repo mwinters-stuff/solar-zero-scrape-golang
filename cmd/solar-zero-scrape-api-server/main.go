@@ -50,7 +50,7 @@ func main() {
 
 	server.ConfigureAPI()
 
-	if err := server.Serve(); err != nil {
+	if err := server.Serve(); err != nil {	
 		log.Fatalln(err)
 	}
 

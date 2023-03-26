@@ -2,6 +2,7 @@ package solarzero
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -155,7 +156,8 @@ func (szs *SolarZeroScrapeImpl) fetchSalesForceData() bool {
 
 	Logger.Info().Msg("Fetch SalesForce Data")
 
-	var jsonStr = []byte(`"` + szs.awsInterface.UserAttributes()["custom:contactId"] + `"`)
+	var jsonStr, _ = json.Marshal(map[string]string{"contactId": szs.awsInterface.UserAttributes()["custom:contactId"]})
+
 	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/prod/newuserinfo",
 		szs.config.SolarZero.API.APIGatewayURL), bytes.NewBuffer(jsonStr))
 
@@ -174,6 +176,7 @@ func (szs *SolarZeroScrapeImpl) fetchSalesForceData() bool {
 		return false
 	}
 
+	//"{\"message\": \"Endpoint request timed out\"}"
 	Logger.Debug().Msgf("SalesForceData: %s", body)
 
 	szs.salesForceData, err = jsontypes.UnmarshalSalesForceData(body)
