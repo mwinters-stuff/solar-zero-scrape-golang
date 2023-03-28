@@ -178,6 +178,10 @@ func (szs *SolarZeroScrapeImpl) fetchSalesForceData() bool {
 
 	//"{\"message\": \"Endpoint request timed out\"}"
 	Logger.Debug().Msgf("SalesForceData: %s", body)
+	if string(body) == "{\"message\": \"Endpoint request timed out\"}" {
+		Logger.Error().Msgf("SalesForceData: Endpoint request timed out")
+		return false
+	}
 
 	szs.salesForceData, err = jsontypes.UnmarshalSalesForceData(body)
 	if err != nil {
