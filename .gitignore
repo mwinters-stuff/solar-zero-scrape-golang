@@ -28,3 +28,7 @@ debug.log
 ./solar-zero-scrape
 test-secret.yaml
 test-values.yaml
+solar-zero-scrape-3.0.0.tgz
+start-minikube.sh
+kube_config
+solar-zero-scrape
