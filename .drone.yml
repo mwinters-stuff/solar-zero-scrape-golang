@@ -81,10 +81,9 @@ steps:
     - chmod 700 /tmp/get_helm.sh
     - /tmp/get_helm.sh
     - git config --global --add safe.directory $(pwd)
-    - helm repo add --username "$${HARBOR_USERNAME}" --password "$${HARBOR_PASSWORD}" harbor https://harbor.winters.org.nz/chartrepo/library/ || exit 1
-    - helm plugin install https://github.com/chartmuseum/helm-push || exit 1
+    - helm registry login --username "$${HARBOR_USERNAME}" --password "$${HARBOR_PASSWORD}" harbor.winters.org.nz/library || exit 1
     - helm package -u charts/solar-zero-scrape || exit 1
-    - helm cm-push "solar-zero-scrape-$${VERTAG}.tgz" harbor || exit 1
+    - helm push "solar-zero-scrape-$${VERTAG}.tgz" oci://harbor.winters.org.nz/library || exit 1
   depends_on:
     - version-release-chart
   when:
