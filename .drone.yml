@@ -82,8 +82,9 @@ steps:
     - /tmp/get_helm.sh
     - git config --global --add safe.directory $(pwd)
     - helm registry login --username "$${HARBOR_USERNAME}" --password "$${HARBOR_PASSWORD}" harbor.winters.org.nz/k8s-at-winters/ || exit 1
+    - helm registry login --username "$${HARBOR_USERNAME}" --password "$${HARBOR_PASSWORD}" harbor.winters.org.nz/private-charts/ || exit 1
     - helm package -u charts/solar-zero-scrape || exit 1
-    - helm push "solar-zero-scrape-$${VERTAG}.tgz" oci://harbor.winters.org.nz/k8s-at-winters || exit 1
+    - helm push "solar-zero-scrape-$${VERTAG}.tgz" oci://harbor.winters.org.nz/private-charts || exit 1
   depends_on:
     - version-release-chart
   when:
