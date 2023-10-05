@@ -6,13 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-co-op/gocron"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/solarzero/jsontypes"
-	"golang.org/x/net/html"
 )
 
 type SolarZeroScrape interface {
@@ -21,8 +19,8 @@ type SolarZeroScrape interface {
 	GetData() bool
 	CurrentData() jsontypes.CurrentData
 	DayData() jsontypes.DayData
-	MonthData() jsontypes.MonthData
-	YearData() jsontypes.YearData
+	MonthData() jsontypes.DayData
+	YearData() jsontypes.DayData
 
 	Ready() bool
 	Healthy() bool
@@ -33,6 +31,10 @@ type SolarZeroScrapeImpl struct {
 	// accessToken  string
 	// refreshToken string
 	// idToken      string
+	apiRequestURL string
+	apiToken      string
+	customerID    string
+	customerUUID  string
 
 	// userAttributes map[string]string
 	salesForceData jsontypes.SalesForceData
@@ -46,8 +48,8 @@ type SolarZeroScrapeImpl struct {
 
 	currentData jsontypes.CurrentData
 	dayData     jsontypes.DayData
-	monthData   jsontypes.MonthData
-	yearData    jsontypes.YearData
+	monthData   jsontypes.DayData
+	yearData    jsontypes.DayData
 
 	awsInterface AWSInterface
 
@@ -135,9 +137,21 @@ func (szs *SolarZeroScrapeImpl) Start() {
 				}
 			} else {
 				Logger.Error().Msg("GetData Failed, Reauthenticating")
-				s.Stop()
+				go s.Stop()
 			}
 		})
+		s.Every(1).Day().At("01:00").Do(func() {
+			Logger.Info().Msgf("Get Daily Data at %s", time.Now())
+			success := szs.GetDailyData()
+			if success {
+				szs.influxdb.WriteDailyData(szs)
+				szs.lastGoodWriteTimestamp = time.Now()
+			} else {
+				Logger.Error().Msg("Daily Failed, Reauthenticating")
+				go s.Stop()
+			}
+		})
+
 		s.StartBlocking()
 	}
 	Logger.Error().Msg("AuthenicateFully Failed, Exiting")
@@ -177,7 +191,7 @@ func (szs *SolarZeroScrapeImpl) fetchSalesForceData() bool {
 	}
 
 	//"{\"message\": \"Endpoint request timed out\"}"
-	Logger.Debug().Msgf("SalesForceData: %s", body)
+	// Logger.Debug().Msgf("SalesForceData: %s", body)
 	if string(body) == "{\"message\": \"Endpoint request timed out\"}" {
 		Logger.Error().Msgf("SalesForceData: Endpoint request timed out")
 		return false
@@ -193,206 +207,193 @@ func (szs *SolarZeroScrapeImpl) fetchSalesForceData() bool {
 	return true
 }
 
-func (szs *SolarZeroScrapeImpl) getCookies() bool {
-	szs.reauthenticate = false
-
-	Logger.Info().Msg("Get Cookies and Login Data")
-
-	url := fmt.Sprintf("https://%s/login/%s",
-		szs.config.SolarZero.API.SolarZeroAPIAddress, szs.salesForceData.Token)
-	method := "GET"
+func (szs *SolarZeroScrapeImpl) httpGet(url string, addCookies bool, addToken bool) ([]byte, *http.Response, error) {
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
-	req, _ := http.NewRequest(method, url, nil)
+	req, _ := http.NewRequest("GET", url, nil)
 
-	res, err := client.Do(req)
-	if err != nil {
-		Logger.Error().Msgf("Get Cookies and Login Data (Login Request): %s", err.Error())
-		return false
-	}
-
-	cookies := res.Cookies()
-	location := res.Header.Get("Location")
-	res.Body.Close()
-
-	if cookies == nil {
-		Logger.Error().Msgf("Get Cookies and Login Data (No Cookies 1): %s", err.Error())
-		return false
-	}
-
-	client = &http.Client{}
-	url = fmt.Sprintf("https://%s%s",
-		szs.config.SolarZero.API.SolarZeroAPIAddress, location)
-
-	// 2nd stage of cookie get.
-	req, _ = http.NewRequest(method, url, nil)
-
-	for _, cookie := range cookies {
-		req.AddCookie(cookie)
-	}
-
-	res, err = client.Do(req)
-	if err != nil {
-		Logger.Error().Msgf("Get Cookies and Login Data (Data Request): %s", err.Error())
-		return false
-	}
-	defer res.Body.Close()
-	// print(res.Cookies())
-
-	szs.cookies = res.Cookies()
-	if szs.cookies == nil {
-		Logger.Error().Msgf("Get Cookies and Login Data (No Cookies 2): %s", err.Error())
-		return false
-	}
-
-	z := html.NewTokenizer(res.Body)
-	depth := 0
-	for {
-		tt := z.Next()
-		switch tt {
-		case html.ErrorToken:
-			Logger.Error().Msgf("Get Cookies and Login Data (ErrorToken): " + z.Err().Error())
-			return false
-		case html.TextToken:
-			if depth > 0 {
-				text := string(z.Text())
-				if strings.HasPrefix(text, "window.__data__ = ") {
-					text = strings.Replace(text, "window.__data__ = ", "", 1)
-					szs.logindata, err = jsontypes.UnmarshalLoginData([]byte(text))
-					if err != nil {
-						Logger.Error().Msgf("Get Cookies and Login Data (UnmarshalLoginData): %s", err.Error())
-						return false
-					}
-					Logger.Debug().Msgf("LoginData %s", text)
-
-					Logger.Info().Msg("Get Cookies and Login Data Success")
-					return true
-				}
-			}
-		case html.StartTagToken, html.EndTagToken:
-			tn, _ := z.TagName()
-			if string(tn) == "script" {
-				if tt == html.StartTagToken {
-					depth++
-				} else {
-					depth--
-				}
-			}
+	if addCookies {
+		for _, cookie := range szs.cookies {
+			req.AddCookie(cookie)
 		}
+
 	}
 
-}
-
-func (szs *SolarZeroScrapeImpl) getWithCookies(url string) ([]byte, error) {
-	Logger.Debug().Msg("Get Url With Cookies: " + url)
-
-	method := "GET"
-
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	req, _ := http.NewRequest(method, url, nil)
-
-	for _, cookie := range szs.cookies {
-		req.AddCookie(cookie)
+	if addToken {
+		req.Header.Add("X-Token", szs.apiToken)
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
-		Logger.Error().Msgf("Get Url With Cookies (Request): %s", err.Error())
-		return nil, err
+		Logger.Error().Msgf("httpGet Do (%s): %s", url, err.Error())
+		return nil, nil, err
 	}
-	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
-		Logger.Error().Msgf("Get Url With Cookies (Status Code): " + res.Status)
-		szs.reauthenticate = true
-		return nil, fmt.Errorf("needs reauthentication")
-	}
+	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		Logger.Error().Msgf("Get Url With Cookies (ReadAll): %s", err.Error())
-		return nil, err
+		Logger.Error().Msgf("httpGet ReadAll (%s): %s", url, err.Error())
+		return nil, nil, err
 	}
 
-	Logger.Debug().Msg("Get Url With Cookies Success")
+	return body, res, nil
+}
 
-	return body, nil
+func (szs *SolarZeroScrapeImpl) getAPIAuthentication() bool {
+	szs.reauthenticate = false
+
+	Logger.Info().Msg("getAPIAuthentication - (login)")
+
+	url := fmt.Sprintf("https://%s/login/%s",
+		szs.config.SolarZero.API.SolarZeroAPIAddress, szs.salesForceData.Token)
+
+	_, res, err := szs.httpGet(url, false, false)
+	if err != nil {
+		return false
+	}
+
+	szs.cookies = res.Cookies()
+
+	if szs.cookies == nil {
+		Logger.Error().Msgf("getAPIAuthentication (No Cookies)")
+		return false
+	}
+
+	Logger.Info().Msg("getAPIAuthentication - (cookie)")
+
+	url = fmt.Sprintf("https://%s/cookie", szs.config.SolarZero.API.SolarZeroAPIAddress)
+	bodyBytes, _, err := szs.httpGet(url, true, false)
+	if err != nil {
+		return false
+	}
+	cookieResult, err := jsontypes.UnmarshalCookieResult(bodyBytes)
+	if err != nil {
+		Logger.Error().Msgf("getAPIAuthentication - (unmarshal cookieResult): %s", err.Error())
+		return false
+	}
+	szs.customerID = cookieResult.CustomerID
+
+	Logger.Info().Msg("getAPIAuthentication - (authentication)")
+
+	url = fmt.Sprintf("https://%s/api/authentication", szs.config.SolarZero.API.SolarZeroAPIAddress)
+
+	bodyBytes, _, err = szs.httpGet(url, true, false)
+	if err != nil {
+		return false
+	}
+	authResult, err := jsontypes.UnmarshalAuthResult(bodyBytes)
+	if err != nil {
+		Logger.Error().Msgf("getAPIAuthentication - (unmarshal authResult): %s", err.Error())
+		return false
+	}
+
+	szs.apiRequestURL = authResult.URL
+	szs.apiToken = authResult.TokenString
+
+	Logger.Info().Msg("getAPIAuthentication - (findCustomerId)")
+
+	url = fmt.Sprintf("%s/EnergyDataDevice/find?customerId=%s", szs.apiRequestURL, szs.customerID)
+
+	bodyBytes, _, err = szs.httpGet(url, false, true)
+	if err != nil {
+		return false
+	}
+	findCustomerResult, err := jsontypes.UnmarshalFindCustomerResult(bodyBytes)
+	if err != nil {
+		Logger.Error().Msgf("getAPIAuthentication - (unmarshal findCustomerResult): %s", err.Error())
+		return false
+	}
+
+	szs.customerUUID = findCustomerResult.ID
+
+	return true
+
+}
+
+func (szs *SolarZeroScrapeImpl) getDataWithToken(query string) ([]byte, error) {
+
+	url := fmt.Sprintf("%s/SolarData/%s/%s", szs.apiRequestURL, szs.customerUUID, query)
+
+	bodyBytes, _, err := szs.httpGet(url, false, true)
+
+	return bodyBytes, err
 
 }
 
 func (szs *SolarZeroScrapeImpl) getCurrentData() bool {
-	Logger.Info().Msg("Get Current Data")
-	body, err := szs.getWithCookies(fmt.Sprintf("%s/getCurrentData/data?id=%s&api=%s", szs.logindata.Auth.API, szs.logindata.DeviceID.ID, szs.logindata.Auth.EMSAPI))
+	Logger.Info().Msg("getCurrentData")
+	body, err := szs.getDataWithToken("now")
 	if err != nil {
-		Logger.Error().Msgf("Get Current Data (getWithCookies): %s", err.Error())
+		Logger.Error().Msgf("getCurrentData: %s", err.Error())
 		return false
 	}
 	szs.currentData, err = jsontypes.UnmarshalCurrentData(body)
 	if err != nil {
-		Logger.Error().Msgf("Get Current Data (UnmarshalCurrentData): %s", err.Error())
+		Logger.Error().Msgf("getCurrentData (UnmarshalCurrentData): %s %s", body, err.Error())
+		szs.reauthenticate = true
 		return false
 	}
 	Logger.Debug().RawJSON("CurrentData", body)
-	Logger.Info().Msg("Get Current Data Success")
+	Logger.Info().Msg("getCurrentData Success")
 	return true
 }
 
 func (szs *SolarZeroScrapeImpl) getDayData() bool {
-	Logger.Info().Msg("Get Day Data")
-	body, err := szs.getWithCookies(fmt.Sprintf("%s/getDayData/data?id=%s&api=%s", szs.logindata.Auth.API, szs.logindata.DeviceID.ID, szs.logindata.Auth.EMSAPI))
+	Logger.Info().Msg("getDayData")
+	body, err := szs.getDataWithToken("today")
 	if err != nil {
-		Logger.Error().Msgf("Get Day Data (getWithCookies): %s", err.Error())
+		Logger.Error().Msgf("getDayData: %s", err.Error())
 		return false
 	}
 	szs.dayData, err = jsontypes.UnmarshalDayData(body)
 	if err != nil {
-		Logger.Error().Msgf("Get Day Data (UnmarshalDayData): %s", err.Error())
+		Logger.Error().Msgf("getDayData (UnmarshalDayData): %s %s", body, err.Error())
+		szs.reauthenticate = true
 		return false
 	}
 	Logger.Debug().RawJSON("DayData", body)
-	Logger.Info().Msg("Get Day Data Success")
+	Logger.Info().Msg("getDayData Success")
 	return true
 }
 
 func (szs *SolarZeroScrapeImpl) getMonthData() bool {
 	Logger.Info().Msg("Get Month Data")
-	body, err := szs.getWithCookies(fmt.Sprintf("%s/getMonthData/data?id=%s&api=%s", szs.logindata.Auth.API, szs.logindata.DeviceID.ID, szs.logindata.Auth.EMSAPI))
+	body, err := szs.getDataWithToken("month")
 	if err != nil {
-		Logger.Error().Msgf("Get Month Data (getWithCookies): %s", err.Error())
+		Logger.Error().Msgf("getMonthData: %s", err.Error())
 		return false
 	}
-	szs.monthData, err = jsontypes.UnmarshalMonthData(body)
+	szs.monthData, err = jsontypes.UnmarshalDayData(body)
 	if err != nil {
-		Logger.Error().Msgf("Get Month Data (UnmarshalMonthData): %s", err.Error())
+		Logger.Error().Msgf("getMonthData (UnmarshalMonthData): %s %s", body, err.Error())
+		szs.reauthenticate = true
 		return false
 	}
-	Logger.Debug().RawJSON("MonthData", body)
-	Logger.Info().Msg("Get Month Data Success")
+	Logger.Debug().RawJSON("getMonthData", body)
+	Logger.Info().Msg("getMonthData Success")
 	return true
 }
 
 func (szs *SolarZeroScrapeImpl) getYearData() bool {
-	Logger.Info().Msg("Get Year Data")
-	body, err := szs.getWithCookies(fmt.Sprintf("%s/getYearData/data?id=%s&api=%s", szs.logindata.Auth.API, szs.logindata.DeviceID.ID, szs.logindata.Auth.EMSAPI))
+	Logger.Info().Msg("getYearData")
+	body, err := szs.getDataWithToken("year")
 	if err != nil {
-		Logger.Error().Msgf("Get Year Data (getWithCookies): %s", err.Error())
+		Logger.Error().Msgf("getYearData: %s", err.Error())
 		return false
 	}
-	szs.yearData, err = jsontypes.UnmarshalYearData(body)
+	szs.yearData, err = jsontypes.UnmarshalDayData(body)
 	if err != nil {
-		Logger.Error().Msgf("Get Year Data (UnmarshalYearData): %s", err.Error())
+		szs.reauthenticate = true
+		Logger.Error().Msgf("getYearData (UnmarshalMonthData): %s %s", body, err.Error())
 		return false
 	}
-	Logger.Debug().RawJSON("YearData", body)
-	Logger.Info().Msg("Get Year Data Success")
+	Logger.Debug().RawJSON("getYearData", body)
+	Logger.Info().Msg("getYearData Success")
 	return true
 }
 
@@ -405,14 +406,14 @@ func (szs *SolarZeroScrapeImpl) AuthenticateFully() bool {
 		return false
 	}
 
-	return szs.getCookies()
+	return szs.getAPIAuthentication()
 }
 
 func (szs *SolarZeroScrapeImpl) GetData() bool {
 	success := szs.getCurrentData()
 	if !success {
 		if szs.reauthenticate {
-			if szs.getCookies() {
+			if szs.getAPIAuthentication() {
 				success = szs.getCurrentData()
 				if !success {
 					return false
@@ -427,7 +428,7 @@ func (szs *SolarZeroScrapeImpl) GetData() bool {
 
 	if !szs.getDayData() {
 		if szs.reauthenticate {
-			if szs.getCookies() {
+			if szs.getAPIAuthentication() {
 				if !szs.getDayData() {
 					return false
 				}
@@ -439,9 +440,13 @@ func (szs *SolarZeroScrapeImpl) GetData() bool {
 		}
 	}
 
+	return true
+}
+
+func (szs *SolarZeroScrapeImpl) GetDailyData() bool {
 	if !szs.getMonthData() {
 		if szs.reauthenticate {
-			if szs.getCookies() {
+			if szs.getAPIAuthentication() {
 				if !szs.getMonthData() {
 					return false
 				}
@@ -455,7 +460,7 @@ func (szs *SolarZeroScrapeImpl) GetData() bool {
 
 	if !szs.getYearData() {
 		if szs.reauthenticate {
-			if szs.getCookies() {
+			if szs.getAPIAuthentication() {
 				if !szs.getYearData() {
 					return false
 				}
@@ -478,11 +483,11 @@ func (szs *SolarZeroScrapeImpl) DayData() jsontypes.DayData {
 	return szs.dayData
 }
 
-func (szs *SolarZeroScrapeImpl) MonthData() jsontypes.MonthData {
+func (szs *SolarZeroScrapeImpl) MonthData() jsontypes.DayData {
 	return szs.monthData
 }
 
-func (szs *SolarZeroScrapeImpl) YearData() jsontypes.YearData {
+func (szs *SolarZeroScrapeImpl) YearData() jsontypes.DayData {
 	return szs.yearData
 }
 
