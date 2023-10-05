@@ -48,8 +48,8 @@ spec:
                 - NET_BIND_SERVICE
           {{- end }}
           env:
-            name: TZ
-            value: {{ .Values.TimeZone }}
+            - name: TZ
+              value: {{ .Values.TimeZone }}
 
           command:
             - ./solar-zero-scrape
