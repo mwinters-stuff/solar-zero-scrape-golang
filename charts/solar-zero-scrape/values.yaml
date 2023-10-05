@@ -118,8 +118,4 @@ otherConfig:
   ApiKey: xx
   ApiSolarZeroApiAddress: xx
 
-
-# @default -- See below
-env:
-  # -- Set the container timezone
-  TZ: Pacific/Auckland
+TimeZone: Pacific/Auckland
