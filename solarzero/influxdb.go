@@ -3,8 +3,6 @@ package solarzero
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -20,6 +18,7 @@ type InfluxDBWriter interface {
 	Connect(client influxdb2.Client) error
 
 	WriteData(scrape SolarZeroScrape)
+	WriteDailyData(scrape SolarZeroScrape)
 	WriteCurrentData(scrape SolarZeroScrape)
 	WriteDayData(scrape SolarZeroScrape)
 	WriteMonthData(scrape SolarZeroScrape)
@@ -33,6 +32,25 @@ type influxDBWriterImpl struct {
 	client     influxdb2.Client
 	writeAPI   api.WriteAPI
 	writeError bool
+}
+
+func parseLocalTimestamp(timestamp string) (time.Time, error) {
+	// Load the local timezone
+	local, err := time.LoadLocation("Local")
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	// Define the layout of the timestamp string
+	layout := "2006-01-02T15:04:05"
+
+	// Parse the timestamp string into a time.Time instance in the local timezone
+	t, err := time.ParseInLocation(layout, timestamp, local)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return t, nil
 }
 
 func NewInfluxDBWriterImpl(config *jsontypes.Configuration) InfluxDBWriter {
@@ -74,16 +92,26 @@ func (iw *influxDBWriterImpl) WriteData(scrape SolarZeroScrape) {
 	Logger.Info().Msg("Writing to InfluxDB")
 	iw.WriteCurrentData(scrape)
 	iw.WriteDayData(scrape)
-	iw.WriteMonthData(scrape)
-	iw.WriteYearData(scrape)
 	iw.writeAPI.Flush()
 	Logger.Info().Msg("Done Writing to InfluxDB")
 }
 
+func (iw *influxDBWriterImpl) WriteDailyData(scrape SolarZeroScrape) {
+	Logger.Info().Msg("Writing Daily to InfluxDB")
+	iw.WriteMonthData(scrape)
+	iw.WriteYearData(scrape)
+	iw.writeAPI.Flush()
+	Logger.Info().Msg("Done Writing Daily to InfluxDB")
+}
+
 func (iw *influxDBWriterImpl) WriteCurrentData(scrape SolarZeroScrape) {
-	Logger.Debug().Msgf("Write to influx Current %s", fmt.Sprint(time.Now()))
 	currentData := scrape.CurrentData()
-	iw.writeAPI.WritePoint(influxdb2.NewPoint("solar", nil, currentData.GetInfluxFields(), time.Now()))
+	influxFields := currentData.GetInfluxFields()
+	stamp, _ := parseLocalTimestamp(currentData.ReceivedDate)
+	influxFields["Received"] = fmt.Sprint(stamp)
+
+	Logger.Debug().Msgf("Write to influx Current %s", fmt.Sprint(stamp))
+	iw.writeAPI.WritePoint(influxdb2.NewPoint("solar", nil, influxFields, stamp))
 }
 
 func (iw *influxDBWriterImpl) WriteDayData(scrape SolarZeroScrape) {
@@ -91,29 +119,17 @@ func (iw *influxDBWriterImpl) WriteDayData(scrape SolarZeroScrape) {
 	for _, hourData := range scrape.DayData() {
 		influxFields := hourData.GetInfluxFields()
 		if influxFields != nil {
-			hourstr := hourData.Hour
-			if hourstr == "12 am" {
-				hourstr = "0 am"
-			}
-			hoursplit := strings.Split(hourstr, " ")
-			if len(hoursplit) == 2 {
-				hour, _ := strconv.Atoi(hoursplit[0])
-				if hoursplit[1] == "pm" && hour != 12 {
-					hour += 12
-				}
-				t := time.Now()
-				stamp := time.Date(t.Year(), t.Month(), t.Day(), hour, 0, 0, 0, time.Local)
-				(*influxFields)["Hour"] = fmt.Sprint(stamp)
-
-				iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-day",
-					map[string]string{
-						"date": fmt.Sprint(stamp),
-					},
-					*influxFields,
-					stamp))
-				Logger.Debug().Msgf("Write to influx Hour %s", fmt.Sprint(stamp))
-			}
+			stamp, _ := parseLocalTimestamp(hourData.ReceivedDate)
+			(*influxFields)["Hour"] = fmt.Sprint(stamp)
+			iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-day",
+				map[string]string{
+					"date": fmt.Sprint(stamp),
+				},
+				*influxFields,
+				stamp))
+			Logger.Debug().Msgf("Write to influx Hour %s", fmt.Sprint(stamp))
 		}
+
 	}
 }
 
@@ -121,8 +137,7 @@ func (iw *influxDBWriterImpl) WriteMonthData(scrape SolarZeroScrape) {
 	for _, dayData := range scrape.MonthData() {
 		influxFields := dayData.GetInfluxFields()
 		if influxFields != nil {
-			t := time.Now()
-			stamp := time.Date(t.Year(), t.Month(), int(dayData.Day), 0, 0, 0, 0, time.Local)
+			stamp, _ := parseLocalTimestamp(dayData.ReceivedDate)
 
 			iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-month",
 				map[string]string{
@@ -139,8 +154,7 @@ func (iw *influxDBWriterImpl) WriteYearData(scrape SolarZeroScrape) {
 	for _, monthData := range scrape.YearData() {
 		influxFields := monthData.GetInfluxFields()
 		if influxFields != nil {
-			t := time.Now()
-			stamp := time.Date(t.Year(), monthData.GetMonthNum(), 1, 0, 0, 0, 0, time.Local)
+			stamp, _ := parseLocalTimestamp(monthData.ReceivedDate)
 
 			iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-year",
 				map[string]string{

@@ -28,7 +28,7 @@ type OtherOptions struct {
 	ApiRegion              string `long:"api-region" default:"us-west-2"`
 	ApiGatewayURL          string `long:"api-gateway-url" default:"https://d6nfzye2cb.execute-api.us-west-2.amazonaws.com"`
 	ApiKey                 string `long:"api-key" default:"mA0UW2ldUUQBY3e9bZWq9lCeKQUNCZC9oKidvdbb"`
-	ApiSolarZeroApiAddress string `long:"api-solar-zero-api-address" default:"solarzero.pnz.technology"`
+	ApiSolarZeroApiAddress string `long:"api-solar-zero-api-address" default:"sunvolt.pnz.technology"`
 }
 
 type AllSolarZeroOptions struct {

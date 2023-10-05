@@ -1,0 +1,117 @@
+# @name login
+GET https://sunvolt.pnz.technology/login/eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2OTYzMDc2MDYsImlzcyI6IjNNVkc5NTlOZDhKTW1hdlNHbU5QemViaThoQjVPQ3dCM1JRNER4Ujc3YVhBTXZ5TFZRNGNkOGJqTGljSjNodk1JanhmVF9La05Nbk10SGNEdXhXakYiLCJzdWIiOiJtYXRoZXdAd2ludGVycy5ueiIsImF1ZCI6Imh0dHBzOi8vc29sYXJjaXR5bnoubXkuc2FsZXNmb3JjZS5jb20iLCJkYXRhIjp7IlNDSUQiOiJTQy0yMS0wNTk4OTQiLCJ1c2VySWQiOiJTQy0yMS0wNTk4OTQiLCJlbWFpbCI6Im1hdGhld0B3aW50ZXJzLm56IiwiZmlyc3ROYW1lIjoiTWF0aGV3IiwibGFzdE5hbWUiOiJXaW50ZXJzIn19.zBsBaKP_wlLGaGq11AMPpbfxSZtUHnZbuwIwZyVzp5VmzWk2Mam_tSetHkL699ZzFAmNRhrPsWUMi83ubvuYDGqWFw9zVULDvQdK6-8qSbTSdIFvS9zktB2G8tSIfCnlwBq_M03nilnHZ4jUoBNPKFKVEDdxtOyDfsLOlWA6hgJFQ5YvPRGFP5gx2KcSNVMX4U5xNRAtGq1zEcORRn1w4QUisDn6qCIGzl6acvvZfoPBSlDNjDIFDKu9L82B7QTD7s-tewLyJEZqrZRIUjVngxNPtT0v9l0CVFLvTcyIZZXfz6yiBr-GBVjrp1Tlm-2ha6v3R9m320w4Ni8GQGt64A
+
+###
+# @name cook
+GET https://sunvolt.pnz.technology/cookie
+
+###
+# @name authen
+GET https://sunvolt.pnz.technology/api/authentication
+
+###
+# @name findc
+# @ref authen
+# @ref cook
+GET {{authen.url}}/EnergyDataDevice/find?customerId={{cook.customerId}}
+X-Token: {{authen.tokenString}}
+
+###
+# @title now data
+# @ref findc
+# @ref authen
+GET {{authen.url}}/SolarData/{{findc.id}}/now
+X-Token: {{authen.tokenString}}
+
+# ###
+# # @title today data
+# # @ref findc
+# # @ref authen
+# GET {{authen.url}}/SolarData/{{findc.id}}/today
+# X-Token: {{authen.tokenString}}
+
+# ###
+# # @title specified day data
+# # @ref findc
+# # @ref authen
+# GET {{authen.url}}/api/SolarData/{{findc.id}}/day?day=2023-10-02
+# X-Token: {{authen.tokenString}}
+
+# ###
+# # @title month data
+# # @ref findc
+# # @ref authen
+# GET {{authen.url}}/SolarData/{{findc.id}}/month
+# X-Token: {{authen.tokenString}}
+
+###
+# @title year data
+# @ref findc
+# @ref authen
+GET {{authen.url}}/SolarData/{{findc.id}}/year
+X-Token: {{authen.tokenString}}
+
+
+
+
+HTTP/1.1 302  - Found
+date: Wed, 04 Oct 2023 07:15:39 GMT
+content-type: text/plain; charset=utf-8
+content-length: 23
+connection: close
+x-powered-by: Express
+location: /
+vary: Accept
+apigw-requestid: MQ-cYj57ywMEMuQ=
+
+HTTP/1.1 200  - OK
+date: Wed, 04 Oct 2023 07:15:40 GMT
+content-type: text/html; charset=utf-8
+content-length: 947
+connection: close
+x-powered-by: Express
+etag: W/"3b3-OYe/d0+koWAkwqVvCibd7ih20F8"
+apigw-requestid: MQ-caifqywMEMGQ=
+
+HTTP/1.1 200  - OK
+date: Wed, 04 Oct 2023 07:15:40 GMT
+content-type: application/json; charset=utf-8
+content-length: 41
+connection: close
+x-powered-by: Express
+etag: W/"29-Hwl1+0XIzp4vdNda01ee/36rFao"
+apigw-requestid: MQ-ccjTdSwMEMsw=
+
+HTTP/1.1 200  - OK
+date: Wed, 04 Oct 2023 07:15:40 GMT
+content-type: application/json; charset=utf-8
+content-length: 101
+connection: close
+x-powered-by: Express
+etag: W/"65-sNxWp3eQYA04hxuGUmL5lINSnzw"
+apigw-requestid: MQ-cegPFSwMEMsA=
+set-cookie: session=eyJhdWQiOiJodHRwczovL3NvbGFyY2l0eW56Lm15LnNhbGVzZm9yY2UuY29tIiwiY3VzdG9tZXJJZCI6IlNDLTIxLTA1OTg5NCIsInRva2VuIjoiMWVlZGVmZWEtNWViMC00MGJmLTlmZWEtMTM3YmU0Y2Y0NTNhIn0=; path=/; expires=Fri, 06 Oct 2023 07:15:40 GMT; httponly, session.sig=s_n6N0MGqct1Hwyjaqu3uN4qWug; path=/; expires=Fri, 06 Oct 2023 07:15:40 GMT; httponly
+
+HTTP/1.1 200  - OK
+connection: close
+content-type: application/json; charset=utf-8
+date: Wed, 04 Oct 2023 07:15:40 GMT
+server: Kestrel
+transfer-encoding: chunked
+request-context: appId=cid-v1:86173606-9116-472c-a5cf-a075d4a317b4
+
+HTTP/1.1 200  - OK
+connection: close
+content-type: application/json; charset=utf-8
+date: Wed, 04 Oct 2023 07:15:40 GMT
+server: Kestrel
+transfer-encoding: chunked
+request-context: appId=cid-v1:86173606-9116-472c-a5cf-a075d4a317b4
+
+HTTP/1.1 200  - OK
+connection: close
+content-type: application/json; charset=utf-8
+date: Wed, 04 Oct 2023 07:15:54 GMT
+server: Kestrel
+transfer-encoding: chunked
+request-context: appId=cid-v1:86173606-9116-472c-a5cf-a075d4a317b4

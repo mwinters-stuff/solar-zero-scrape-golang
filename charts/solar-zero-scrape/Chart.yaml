@@ -1,9 +1,9 @@
 ---
 apiVersion: v2
-appVersion: 3.0.0
+appVersion: 4.0.0
 description: An image and helm chart for solar-zero-scrape
 name: solar-zero-scrape
-version: 3.0.0
+version: 4.0.0
 kubeVersion: ">=1.16.0-0"
 keywords:
   - solar-zero-scrape

@@ -9,7 +9,7 @@
         "Region" :"us-west-2",
         "ApiGatewayURL": "https://d6nfzye2cb.execute-api.us-west-2.amazonaws.com",
         "ApiKey": "mA0UW2ldUUQBY3e9bZWq9lCeKQUNCZC9oKidvdbb",
-        "SolarZeroApiAddress": "solarzero.pnz.technology"
+        "SolarZeroApiAddress": "sunvolt.pnz.technology"
       }
   },
   "InfluxDB":{

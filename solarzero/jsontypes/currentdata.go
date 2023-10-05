@@ -1,14 +1,12 @@
 // This file was generated from JSON Schema using quicktype, do not modify it directly.
 // To parse and unparse this JSON data, add this code to your project and do:
 //
-//    CurrentData, err := UnmarshalCurrentData(bytes)
-//    bytes, err = CurrentData.Marshal()
+//    currentData, err := UnmarshalCurrentData(bytes)
+//    bytes, err = currentData.Marshal()
 
 package jsontypes
 
-import (
-	"encoding/json"
-)
+import "encoding/json"
 
 func UnmarshalCurrentData(data []byte) (CurrentData, error) {
 	var r CurrentData
@@ -16,30 +14,27 @@ func UnmarshalCurrentData(data []byte) (CurrentData, error) {
 	return r, err
 }
 
-type CurrentData struct {
-	DeviceStatus    int64   `json:"deviceStatus"`
-	DPowerFlow      int64   `json:"dPowerFlow"`
-	Export          int64   `json:"export"`
-	Import          int64   `json:"import"`
-	Load            int64   `json:"load"`
-	Solar           int64   `json:"solar"`
-	Soc             int64   `json:"soc"`
-	Charge          int64   `json:"charge"`
-	GridPowerOutage int64   `json:"gridPowerOutage"`
-	Temperature     float64 `json:"temperature"`
+func (r *CurrentData) Marshal() ([]byte, error) {
+	return json.Marshal(r)
 }
 
-func (r *CurrentData) GetInfluxFields() map[string]interface{} {
-	return map[string]interface{}{
-		"DeviceStatus":    r.DeviceStatus,
-		"DPowerFlow":      r.DPowerFlow,
-		"Export":          r.Export,
-		"Import":          r.Import,
-		"Load":            r.Load,
-		"Solar":           r.Solar,
-		"Soc":             r.Soc,
-		"Charge":          r.Charge,
-		"GridPowerOutage": r.GridPowerOutage,
-		"Temperature":     r.Temperature,
-	}
+type CurrentData struct {
+	Ppv1                 float64     `json:"ppv1"`
+	Ppv2                 float64     `json:"ppv2"`
+	ReceivedDate         string      `json:"receivedDate"`
+	Soc                  int64       `json:"soc"`
+	Load                 float64     `json:"load"`
+	DeviceStatus         int64       `json:"deviceStatus"`
+	Temperature          float64     `json:"temperature"`
+	Import               float64     `json:"import"`
+	Export               float64     `json:"export"`
+	BatteryCurrent       float64     `json:"batteryCurrent"`
+	BatteryVoltage       float64     `json:"batteryVoltage"`
+	Charge               float64     `json:"charge"`
+	Discharge            float64     `json:"discharge"`
+	PowerFlow            int64       `json:"powerFlow"`
+	GridPowerMode        int64       `json:"gridPowerMode"`
+	GridPowerOutage      int64       `json:"gridPowerOutage"`
+	InterconnectionState interface{} `json:"interconnectionState"`
+	TotalCapacity        int64       `json:"totalCapacity"`
 }
