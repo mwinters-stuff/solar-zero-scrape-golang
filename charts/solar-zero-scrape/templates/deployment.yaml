@@ -49,7 +49,7 @@ spec:
           {{- end }}
           env:
             name: TZ
-            value: "{{ Values.TimeZone }}"
+            value: {{ .Values.TimeZone }}
 
           command:
             - ./solar-zero-scrape
