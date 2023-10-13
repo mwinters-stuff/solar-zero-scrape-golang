@@ -44,8 +44,6 @@ type SolarZeroScrapeImpl struct {
 	influxdb InfluxDBWriter
 	mqtt     MQTTClient
 
-	logindata jsontypes.LoginData
-
 	currentData jsontypes.CurrentData
 	dayData     jsontypes.DayData
 	monthData   jsontypes.DayData

@@ -87,20 +87,22 @@ func (mq *mqttClientImpl) publish(topic string, payload string) {
 func (mq *mqttClientImpl) WriteCurrentData(scrape SolarZeroScrape) {
 	Logger.Debug().Msgf("Write to mqtt Current %s", fmt.Sprint(time.Now()))
 	currentData := scrape.CurrentData()
+	if currentData.DeviceStatus == 1 {
 
-	mq.publish("devicestatus", strconv.FormatInt(currentData.DeviceStatus, 10))
-	mq.publish("dpowerflow", strconv.FormatInt(currentData.PowerFlow, 10))
-	mq.publish("export", strconv.FormatInt(int64(currentData.Export*1000), 10))
-	mq.publish("import", strconv.FormatInt(int64(currentData.Import*1000), 10))
-	mq.publish("load", strconv.FormatInt(int64(currentData.Load*1000), 10))
-	mq.publish("solar", strconv.FormatInt(int64((currentData.Ppv1+currentData.Ppv2)*1000), 10))
-	mq.publish("soc", strconv.FormatInt(currentData.Soc, 10))
-	mq.publish("charge", strconv.FormatInt(int64(currentData.Charge*1000), 10))
-	mq.publish("discharge", strconv.FormatInt(int64(currentData.Charge*1000), 10))
-	mq.publish("batterycurrent", strconv.FormatFloat(currentData.BatteryCurrent, 'f', 2, 32))
-	mq.publish("batteryvoltage", strconv.FormatFloat(currentData.BatteryVoltage, 'f', 2, 32))
-	mq.publish("gridpoweroutage", strconv.FormatInt(currentData.GridPowerOutage, 10))
-	mq.publish("temperature", strconv.FormatFloat(currentData.Temperature, 'f', 2, 32))
+		mq.publish("devicestatus", strconv.FormatInt(currentData.DeviceStatus, 10))
+		mq.publish("dpowerflow", strconv.FormatInt(currentData.PowerFlow, 10))
+		mq.publish("export", strconv.FormatInt(int64(currentData.Export*1000), 10))
+		mq.publish("import", strconv.FormatInt(int64(currentData.Import*1000), 10))
+		mq.publish("load", strconv.FormatInt(int64(currentData.Load*1000), 10))
+		mq.publish("solar", strconv.FormatInt(int64((currentData.Ppv1+currentData.Ppv2)*1000), 10))
+		mq.publish("soc", strconv.FormatInt(currentData.Soc, 10))
+		mq.publish("charge", strconv.FormatInt(int64(currentData.Charge*1000), 10))
+		mq.publish("discharge", strconv.FormatInt(int64(currentData.Charge*1000), 10))
+		mq.publish("batterycurrent", strconv.FormatFloat(currentData.BatteryCurrent, 'f', 2, 32))
+		mq.publish("batteryvoltage", strconv.FormatFloat(currentData.BatteryVoltage, 'f', 2, 32))
+		mq.publish("gridpoweroutage", strconv.FormatInt(currentData.GridPowerOutage, 10))
+		mq.publish("temperature", strconv.FormatFloat(currentData.Temperature, 'f', 2, 32))
+	}
 }
 
 func (mq *mqttClientImpl) WriteDayData(scrape SolarZeroScrape) {
