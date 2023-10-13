@@ -106,17 +106,22 @@ func (iw *influxDBWriterImpl) WriteDailyData(scrape SolarZeroScrape) {
 
 func (iw *influxDBWriterImpl) WriteCurrentData(scrape SolarZeroScrape) {
 	currentData := scrape.CurrentData()
-	influxFields := currentData.GetInfluxFields()
-	stamp, _ := parseLocalTimestamp(currentData.ReceivedDate)
-	influxFields["Received"] = fmt.Sprint(stamp)
+	if currentData.DeviceStatus == 1 {
 
-	Logger.Debug().Msgf("Write to influx Current %s", fmt.Sprint(stamp))
-	iw.writeAPI.WritePoint(influxdb2.NewPoint("solar", nil, influxFields, stamp))
+		influxFields := currentData.GetInfluxFields()
+		stamp, _ := parseLocalTimestamp(currentData.ReceivedDate)
+		influxFields["Received"] = fmt.Sprint(stamp)
+
+		Logger.Debug().Msgf("Write to influx Current %s", fmt.Sprint(stamp))
+		iw.writeAPI.WritePoint(influxdb2.NewPoint("solar", nil, influxFields, stamp))
+	}
+
 }
 
 func (iw *influxDBWriterImpl) WriteDayData(scrape SolarZeroScrape) {
 
 	for _, hourData := range scrape.DayData() {
+
 		influxFields := hourData.GetInfluxFields()
 		if influxFields != nil {
 			stamp, _ := parseLocalTimestamp(hourData.ReceivedDate)
