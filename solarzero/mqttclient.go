@@ -86,14 +86,15 @@ func (mq *mqttClientImpl) publish(topic string, payload string) {
 func (mq *mqttClientImpl) WriteCurrentData(scrape SolarZeroScrape) {
 	Logger.Debug().Msgf("Write to mqtt Current %s", fmt.Sprint(time.Now()))
 	currentData := scrape.CurrentData()
+	if currentData.DeviceStatus == 1 {
+		fields := currentData.GetMQTTFields()
 
-	fields := currentData.GetMQTTFields()
+		stamp, _ := parseLocalTimestamp(currentData.ReceivedDate)
+		mq.publish("current/received", fmt.Sprint(stamp))
 
-	stamp, _ := parseLocalTimestamp(currentData.ReceivedDate)
-	mq.publish("current/received", fmt.Sprint(stamp))
-
-	for key, value := range fields {
-		mq.publish(fmt.Sprintf("current/%s", key), value)
+		for key, value := range fields {
+			mq.publish(fmt.Sprintf("current/%s", key), value)
+		}
 	}
 
 }
