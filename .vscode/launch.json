@@ -26,7 +26,7 @@
         "--influx-host-url", "https://influxdb.winters.org.nz",
         "--influx-org", "winters.nz",
         "--influx-bucket", "test",
-        "--mqtt-server-url","mqtt://192.168.30.14:1883",
+        "--mqtt-server-url","mqtt://192.168.1.100:1883",
         "--mqtt-username","solarzero",
         "--mqtt-password","zerosolar",
         "--mqtt-topic","solar-zero-test"
