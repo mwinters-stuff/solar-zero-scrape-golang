@@ -22,6 +22,10 @@ type SolarZeroScrape interface {
 	MonthData() jsontypes.DayData
 	YearData() jsontypes.DayData
 
+	SolarVsGrid() jsontypes.SolarVsGrid
+	SolarUse() jsontypes.SolarUse
+	ElectricityUse() jsontypes.ElectricityUse
+
 	Ready() bool
 	Healthy() bool
 }
@@ -48,6 +52,10 @@ type SolarZeroScrapeImpl struct {
 	dayData     jsontypes.DayData
 	monthData   jsontypes.DayData
 	yearData    jsontypes.DayData
+
+	solarVsGrid    jsontypes.SolarVsGrid
+	solarUse       jsontypes.SolarUse
+	electricityUse jsontypes.ElectricityUse
 
 	awsInterface AWSInterface
 
@@ -124,7 +132,7 @@ func (szs *SolarZeroScrapeImpl) Start() {
 	s := gocron.NewScheduler(time.Local)
 
 	for szs.AuthenticateFully() {
-		s.Every(5).Minutes().Do(func() {
+		s.Every(1).Minutes().Do(func() {
 			Logger.Info().Msgf("Get Data at %s", time.Now())
 			success := szs.GetData()
 			if success {
@@ -313,7 +321,7 @@ func (szs *SolarZeroScrapeImpl) getAPIAuthentication() bool {
 
 }
 
-func (szs *SolarZeroScrapeImpl) getDataWithToken(query string) ([]byte, error) {
+func (szs *SolarZeroScrapeImpl) getSolarDataWithToken(query string) ([]byte, error) {
 
 	url := fmt.Sprintf("%s/SolarData/%s/%s", szs.apiRequestURL, szs.customerUUID, query)
 
@@ -323,9 +331,39 @@ func (szs *SolarZeroScrapeImpl) getDataWithToken(query string) ([]byte, error) {
 
 }
 
+func (szs *SolarZeroScrapeImpl) getSolarVsGridDataWithToken(query string) ([]byte, error) {
+
+	url := fmt.Sprintf("%s/SolarVsGrid/%s/%s", szs.apiRequestURL, szs.customerUUID, query)
+	Logger.Debug().Msg(url)
+	bodyBytes, _, err := szs.httpGet(url, false, true)
+
+	return bodyBytes, err
+
+}
+
+func (szs *SolarZeroScrapeImpl) getSolarUseDataWithToken(query string) ([]byte, error) {
+
+	url := fmt.Sprintf("%s/SolarUse/%s/%s", szs.apiRequestURL, szs.customerUUID, query)
+	Logger.Debug().Msg(url)
+	bodyBytes, _, err := szs.httpGet(url, false, true)
+
+	return bodyBytes, err
+
+}
+
+func (szs *SolarZeroScrapeImpl) getElectricityUseDataWithToken(query string) ([]byte, error) {
+
+	url := fmt.Sprintf("%s/ElectricityUse/%s/%s", szs.apiRequestURL, szs.customerUUID, query)
+	Logger.Debug().Msg(url)
+	bodyBytes, _, err := szs.httpGet(url, false, true)
+
+	return bodyBytes, err
+
+}
+
 func (szs *SolarZeroScrapeImpl) getCurrentData() bool {
 	Logger.Info().Msg("getCurrentData")
-	body, err := szs.getDataWithToken("now")
+	body, err := szs.getSolarDataWithToken("now")
 	if err != nil {
 		Logger.Error().Msgf("getCurrentData: %s", err.Error())
 		return false
@@ -341,9 +379,63 @@ func (szs *SolarZeroScrapeImpl) getCurrentData() bool {
 	return true
 }
 
+func (szs *SolarZeroScrapeImpl) getCurrentSolarVsGridData() bool {
+	Logger.Info().Msg("getCurrentSolarVsGridData")
+	body, err := szs.getSolarVsGridDataWithToken(fmt.Sprintf("day?day=%s", time.Now().Format("2006-01-02")))
+	if err != nil {
+		Logger.Error().Msgf("getCurrentSolarVsGridData: %s", err.Error())
+		return false
+	}
+	szs.solarVsGrid, err = jsontypes.UnmarshalSolarVsGrid(body)
+	if err != nil {
+		Logger.Error().Msgf("getCurrentSolarVsGridData (UnmarshalSolarVsGrid): %s %s", body, err.Error())
+		szs.reauthenticate = true
+		return false
+	}
+	Logger.Debug().RawJSON("CurrentSolarVsGridData", body)
+	Logger.Info().Msg("getCurrentSolarVsGridData Success")
+	return true
+}
+
+func (szs *SolarZeroScrapeImpl) getCurrentSolarUseData() bool {
+	Logger.Info().Msg("getCurrentSolarUseData")
+	body, err := szs.getSolarUseDataWithToken(fmt.Sprintf("day?day=%s", time.Now().Format("2006-01-02")))
+	if err != nil {
+		Logger.Error().Msgf("getCurrentSolarUseData: %s", err.Error())
+		return false
+	}
+	szs.solarUse, err = jsontypes.UnmarshalSolarUse(body)
+	if err != nil {
+		Logger.Error().Msgf("getCurrentSolarUseData (UnmarshalSolarUse): %s %s", body, err.Error())
+		szs.reauthenticate = true
+		return false
+	}
+	Logger.Debug().RawJSON("CurrentSolarUseData", body)
+	Logger.Info().Msg("getCurrentSolarUseData Success")
+	return true
+}
+
+func (szs *SolarZeroScrapeImpl) getCurrentElectricityUseData() bool {
+	Logger.Info().Msg("getCurrentElectricityUseData")
+	body, err := szs.getElectricityUseDataWithToken(fmt.Sprintf("day?day=%s", time.Now().Format("2006-01-02")))
+	if err != nil {
+		Logger.Error().Msgf("getCurrentElectricityUseData: %s", err.Error())
+		return false
+	}
+	szs.electricityUse, err = jsontypes.UnmarshalElectricityUse(body)
+	if err != nil {
+		Logger.Error().Msgf("getCurrentElectricityUseData (UnmarshalElectricityUse): %s %s", body, err.Error())
+		szs.reauthenticate = true
+		return false
+	}
+	Logger.Debug().RawJSON("CurrentElectricityUseData", body)
+	Logger.Info().Msg("getCurrentElectricityUseData Success")
+	return true
+}
+
 func (szs *SolarZeroScrapeImpl) getDayData() bool {
 	Logger.Info().Msg("getDayData")
-	body, err := szs.getDataWithToken("today")
+	body, err := szs.getSolarDataWithToken("today")
 	if err != nil {
 		Logger.Error().Msgf("getDayData: %s", err.Error())
 		return false
@@ -361,7 +453,7 @@ func (szs *SolarZeroScrapeImpl) getDayData() bool {
 
 func (szs *SolarZeroScrapeImpl) getMonthData() bool {
 	Logger.Info().Msg("Get Month Data")
-	body, err := szs.getDataWithToken("month")
+	body, err := szs.getSolarDataWithToken("month")
 	if err != nil {
 		Logger.Error().Msgf("getMonthData: %s", err.Error())
 		return false
@@ -379,7 +471,7 @@ func (szs *SolarZeroScrapeImpl) getMonthData() bool {
 
 func (szs *SolarZeroScrapeImpl) getYearData() bool {
 	Logger.Info().Msg("getYearData")
-	body, err := szs.getDataWithToken("year")
+	body, err := szs.getSolarDataWithToken("year")
 	if err != nil {
 		Logger.Error().Msgf("getYearData: %s", err.Error())
 		return false
@@ -414,6 +506,48 @@ func (szs *SolarZeroScrapeImpl) GetData() bool {
 			if szs.getAPIAuthentication() {
 				success = szs.getCurrentData()
 				if !success {
+					return false
+				}
+			} else {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+
+	if !szs.getCurrentSolarUseData() {
+		if szs.reauthenticate {
+			if szs.getAPIAuthentication() {
+				if !szs.getCurrentSolarUseData() {
+					return false
+				}
+			} else {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+
+	if !szs.getCurrentElectricityUseData() {
+		if szs.reauthenticate {
+			if szs.getAPIAuthentication() {
+				if !szs.getCurrentElectricityUseData() {
+					return false
+				}
+			} else {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+
+	if !szs.getCurrentSolarVsGridData() {
+		if szs.reauthenticate {
+			if szs.getAPIAuthentication() {
+				if !szs.getCurrentSolarVsGridData() {
 					return false
 				}
 			} else {
@@ -487,6 +621,18 @@ func (szs *SolarZeroScrapeImpl) MonthData() jsontypes.DayData {
 
 func (szs *SolarZeroScrapeImpl) YearData() jsontypes.DayData {
 	return szs.yearData
+}
+
+func (szs *SolarZeroScrapeImpl) SolarVsGrid() jsontypes.SolarVsGrid {
+	return szs.solarVsGrid
+}
+
+func (szs *SolarZeroScrapeImpl) SolarUse() jsontypes.SolarUse {
+	return szs.solarUse
+}
+
+func (szs *SolarZeroScrapeImpl) ElectricityUse() jsontypes.ElectricityUse {
+	return szs.electricityUse
 }
 
 func (szs *SolarZeroScrapeImpl) Ready() bool {
