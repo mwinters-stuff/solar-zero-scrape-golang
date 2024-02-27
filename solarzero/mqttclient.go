@@ -2,6 +2,8 @@ package solarzero
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -42,8 +44,10 @@ var defaultPublushHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqt
 
 func (mq *mqttClientImpl) Connect() error {
 
-	// mqtt.DEBUG = log.New(os.Stdout, "", 0)
-	// mqtt.ERROR = log.New(os.Stdout, "", 0)
+	mqtt.ERROR = log.New(os.Stdout, "[ERROR] ", 0)
+	mqtt.CRITICAL = log.New(os.Stdout, "[CRIT] ", 0)
+	mqtt.WARN = log.New(os.Stdout, "[WARN]  ", 0)
+	mqtt.DEBUG = log.New(os.Stdout, "[DEBUG] ", 0)
 
 	opts := mqtt.NewClientOptions().
 		AddBroker(mq.config.Mqtt.URL).
@@ -77,8 +81,7 @@ func (mq *mqttClientImpl) WriteData(scrape SolarZeroScrape) {
 func (mq *mqttClientImpl) publish(topic string, payload string) {
 	t := mq.client.Publish(fmt.Sprintf("%s/%s", mq.config.Mqtt.BaseTopic, topic), 0, true, payload)
 	go func() {
-
-		_ = t.Done() // Can also use '<-t.Done()' in releases > 1.2.0
+		_ = t.Wait() // Can also use '<-t.Done()' in releases > 1.2.0
 		if t.Error() != nil {
 			Logger.Error().Err(t.Error()) // Use your preferred logging technique (or just fmt.Printf)
 		}
