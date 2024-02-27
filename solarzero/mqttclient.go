@@ -116,6 +116,7 @@ func (mq *mqttClientImpl) WriteCurrentData(scrape SolarZeroScrape) {
 	mq.publish("today/solar-vs-grid-solar-percent", strconv.FormatInt(scrape.SolarVsGrid().SolarPercent, 10))
 	mq.publish("today/solar-vs-grid-solar", strconv.FormatInt(int64((scrape.SolarVsGrid().SolarAmount)*1000.0), 10))
 
+	mq.publish("today/solar", strconv.FormatInt(int64((scrape.SolarUse().ExportAmount+scrape.SolarUse().SelfUseAmount)*1000.0), 10))
 }
 
 func (mq *mqttClientImpl) WriteDayData(scrape SolarZeroScrape) {
@@ -252,7 +253,7 @@ func (mq *mqttClientImpl) PublishHomeAssistantDiscovery() {
     "unit_of_meas": "W",
     "sug_dsp_prc": 1,
     "dev_cla": "power",
-		"state_class": "total_increasing",
+		"state_class": "measurement",
     "icon": "mdi:transmission-tower-import",
     "dev": {
       "ids": "%[1]s"
@@ -399,6 +400,27 @@ func (mq *mqttClientImpl) PublishHomeAssistantDiscovery() {
     "dev_cla": "energy",
     "state_class": "total_increasing",
     "icon": "mdi:home-lightning-bolt",
+    "dev": {
+      "ids": "%[1]s"
+    },
+    "avty": {
+      "t": "%[1]s/status",
+      "pl_avail": "ONLINE",
+      "pl_not_avail": "OFFLINE"
+    }
+  }
+	`, mq.config.Mqtt.BaseTopic))
+
+	mq.publishTopic(fmt.Sprintf("%s-today-solar/config", baseTopic), fmt.Sprintf(`
+  {
+    "uniq_id": "%[1]s-today-solar",
+    "name": "Solar Generated Today",
+    "stat_t": "%[1]s/today/solar",
+    "unit_of_meas": "Wh",
+    "sug_dsp_prc": 1,
+    "dev_cla": "energy",
+    "state_class": "total_increasing",
+    "icon": "mdi:solar-panel-large",
     "dev": {
       "ids": "%[1]s"
     },
