@@ -1,0 +1,44 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Package",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/main.go",
+      "args": ["--debug", "--config", "${workspaceFolder}/testconfig.json"]
+    },
+    {
+      "name": "Launch CLI Package",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/solar-zero-scrape-api-server/main.go",
+      "args": ["--port","8080", "--host", "0.0.0.0",
+         "--debug", 
+        "--solarzero-username", "",
+        "--solarzero-password", "",
+        "--influx-token", "",
+        "--influx-host-url", "https://INFLUXHOST",
+        "--influx-org", "INFLUXORG",
+        "--influx-bucket", "test",
+        "--mqtt-server-url","mqtt://MQTTSERVER:1883",
+        "--mqtt-username","",
+        "--mqtt-password","",
+        "--mqtt-topic","solar-zero-test"
+    ]
+    },
+    {
+      "name": "Launch CLI Package Help",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/solar-zero-scrape-api-server/main.go",
+      "args": ["--help"]
+    }
+  ]
+}
