@@ -16,6 +16,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
     - uses: actions/checkout@v4
 
@@ -33,7 +36,7 @@ jobs:
       with:
         # list of Docker images to use as base name for tags
         images: |
-          ghcr.io/${{github.repository}}
+          ghcr.io/${{ github.repository }}
         # generate Docker tags based on the following events/attributes
         tags: |
           type=schedule
