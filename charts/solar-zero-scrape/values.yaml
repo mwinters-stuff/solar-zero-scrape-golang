@@ -9,19 +9,11 @@ replicaCount: 1
 
 image:
   # -- image repository
-  repository: harbor.winters.org.nz/library/solar-zero-scrape
+  repository: ghcr.io/mwinters-stuff/solar-zero-scrape-golang
   # -- image tag
-  tag: "latest"
+  tag: "master"
   # -- image pull policy
   pullPolicy: IfNotPresent
-
-imagePullSecrets: 
-  - name: solar-zero-scrape-pull-secret
-imageCredentials:
-  registry: harbor.winters.org.nz
-  username: robot$github
-  password: OFKlOP9HKJrCknf18tgHwGwBfw4nq6GG
-  email: mathew@winters.nz
 
 nameOverride: "solar-zero-scrape"
 fullnameOverride: "solar-zero-scrape"

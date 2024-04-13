@@ -7,13 +7,9 @@ version: 4.0.4
 kubeVersion: ">=1.16.0-0"
 keywords:
   - solar-zero-scrape
-home: https://github.com/mwinters-stuff/solar-zero-scrape
+home: https://github.com/mwinters-stuff/solar-zero-scrape-golang
 sources:
-  - https://github.com/mwinters-stuff/solar-zero-scrape
+  - https://github.com/mwinters-stuff/solar-zero-scrape-golang
 maintainers:
   - name: mwinters
     email: mathew@winters.nz
-# dependencies:
-#   - name: common
-#     repository: http://harbor.harbor.svc/chartrepo/k8s-at-winters
-#     version: latest
