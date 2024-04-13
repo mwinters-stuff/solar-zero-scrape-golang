@@ -67,12 +67,12 @@ jobs:
     - name: Set Chart version
       uses: mikefarah/yq@v4.43.1
       with:
-        cmd: yq -i ".version = \"${{ steps.meta.outputs.version }}\" | .appVersion = \"${{ steps.meta.outputs.version }}\"" "charts/solar-zero-scrape/Chart.yaml"
+        cmd: yq -i '.version = "${{ steps.meta.outputs.version }}" | .appVersion = "${{ steps.meta.outputs.version }}"' charts/solar-zero-scrape/Chart.yaml
 
     - name: set image tag in values.yaml
       uses: mikefarah/yq@v4.43.1
       with:
-        cmd: yq -i ".image.tag = \"${{ steps.meta.outputs.version }}\"" "charts/solar-zero-scrape/values.yaml"
+        cmd: yq -i '.image.tag = "${{ steps.meta.outputs.version }}' charts/solar-zero-scrape/values.yaml
 
     - name: Configure Git
       run: |
