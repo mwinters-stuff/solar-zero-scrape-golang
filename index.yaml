@@ -2,6 +2,24 @@ apiVersion: v1
 entries:
   solar-zero-scrape:
   - apiVersion: v2
+    appVersion: 1.14.0
+    created: "2024-06-02T07:09:11.22138068Z"
+    description: An image and helm chart for solar-zero-scrape
+    digest: 771073f0029516e3abcf3ab62e071cc30dbf1460ea5e83fc6f1ecccfc43a1b14
+    home: https://github.com/mwinters-stuff/solar-zero-scrape-golang
+    keywords:
+    - solar-zero-scrape
+    kubeVersion: '>=1.16.0-0'
+    maintainers:
+    - email: mathew@winters.nz
+      name: mwinters
+    name: solar-zero-scrape
+    sources:
+    - https://github.com/mwinters-stuff/solar-zero-scrape-golang
+    urls:
+    - https://github.com/mwinters-stuff/solar-zero-scrape-golang/releases/download/solar-zero-scrape-1.14.0/solar-zero-scrape-1.14.0.tgz
+    version: 1.14.0
+  - apiVersion: v2
     appVersion: 1.13.4
     created: "2024-04-14T08:26:52.84919628Z"
     description: An image and helm chart for solar-zero-scrape
@@ -37,4 +55,4 @@ entries:
     urls:
     - https://github.com/mwinters-stuff/solar-zero-scrape-golang/releases/download/solar-zero-scrape-1.13.3/solar-zero-scrape-1.13.3.tgz
     version: 1.13.3
-generated: "2024-04-14T08:26:52.849229932Z"
+generated: "2024-06-02T07:09:11.221399004Z"
