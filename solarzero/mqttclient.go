@@ -56,16 +56,20 @@ func (mq *mqttClientImpl) Connect() error {
 		SetPassword(mq.config.Mqtt.Password).
 		SetWill(fmt.Sprintf("%s/%s", mq.config.Mqtt.BaseTopic, "status"), "OFFLINE", 0, true).
 		SetAutoReconnect(true).
-		SetDefaultPublishHandler(defaultPublushHandler)
+		SetDefaultPublishHandler(defaultPublushHandler).
+		SetOnConnectHandler(mq.OnConnectHandler)
 
 	mq.client = mqtt.NewClient(opts)
 	if token := mq.client.Connect(); token.Wait() && token.Error() != nil {
 		Logger.Fatal().Err(token.Error())
 	}
 
+	return nil
+}
+
+func (mq *mqttClientImpl) OnConnectHandler(client mqtt.Client) {
 	mq.publish("status", "ONLINE")
 	mq.PublishHomeAssistantDiscovery()
-	return nil
 }
 
 func (mq *mqttClientImpl) WriteData(scrape SolarZeroScrape) {
