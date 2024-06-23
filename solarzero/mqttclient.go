@@ -74,7 +74,11 @@ func (mq *mqttClientImpl) OnConnectHandler(client mqtt.Client) {
 
 func (mq *mqttClientImpl) WriteData(scrape SolarZeroScrape) {
 	Logger.Info().Msg("Writing to MQTT")
-	mq.WriteCurrentData(scrape)
+	
+  mq.publish("status", "ONLINE")
+	mq.PublishHomeAssistantDiscovery()
+
+  mq.WriteCurrentData(scrape)
 	mq.WriteDayData(scrape)
 	mq.WriteMonthData(scrape)
 	mq.WriteYearData(scrape)
