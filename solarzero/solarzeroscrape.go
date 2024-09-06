@@ -94,16 +94,19 @@ func NewSolarZeroScrape(options *AllSolarZeroOptions) SolarZeroScrape {
 
 	}
 
-	influxdb := NewInfluxDBWriter(&config)
-	err := influxdb.Connect(influxdb2.NewClient(config.InfluxDB.HostURL, config.InfluxDB.Token))
-	if err != nil {
-		Logger.Panic().Msgf("InfluxDB Connect %s", err.Error())
+	var influxdb InfluxDBWriter
+	if config.InfluxDB.HostURL != "" {
+		influxdb = NewInfluxDBWriter(&config)
+		var err = influxdb.Connect(influxdb2.NewClient(config.InfluxDB.HostURL, config.InfluxDB.Token))
+		if err != nil {
+			Logger.Panic().Msgf("InfluxDB Connect %s", err.Error())
+		}
 	}
 
 	var mqtt MQTTClient
 	if config.Mqtt.URL != "" {
 		mqtt = NewMQTTClient(&config)
-		err = mqtt.Connect()
+		var err = mqtt.Connect()
 		if err != nil {
 			Logger.Panic().Msgf("MQTT Connect %s", err.Error())
 		}
@@ -136,11 +139,13 @@ func (szs *SolarZeroScrapeImpl) Start() {
 			Logger.Info().Msgf("Get Data at %s", time.Now())
 			success := szs.GetData()
 			if success {
-				szs.influxdb.WriteData(szs)
-				szs.lastGoodWriteTimestamp = time.Now()
+				if szs.influxdb != nil {
+					szs.influxdb.WriteData(szs)
+				}
 				if szs.mqtt != nil {
 					szs.mqtt.WriteData(szs)
 				}
+				szs.lastGoodWriteTimestamp = time.Now()
 			} else {
 				Logger.Error().Msg("GetData Failed, Reauthenticating")
 				go s.Stop()
@@ -150,7 +155,9 @@ func (szs *SolarZeroScrapeImpl) Start() {
 			Logger.Info().Msgf("Get Daily Data at %s", time.Now())
 			success := szs.GetDailyData()
 			if success {
-				szs.influxdb.WriteDailyData(szs)
+				if szs.influxdb != nil {
+					szs.influxdb.WriteDailyData(szs)
+				}
 				szs.lastGoodWriteTimestamp = time.Now()
 			} else {
 				Logger.Error().Msg("Daily Failed, Reauthenticating")
