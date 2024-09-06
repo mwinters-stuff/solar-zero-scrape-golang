@@ -1,6 +1,9 @@
 package jsontypes
 
-import "strconv"
+import (
+	"math"
+	"strconv"
+)
 
 func (r *CurrentData) GetInfluxFields() map[string]interface{} {
 	return map[string]interface{}{
@@ -24,13 +27,13 @@ func (r *CurrentData) GetMQTTFields() map[string]string {
 	return map[string]string{
 		"devicestatus":    strconv.FormatInt(r.DeviceStatus, 10),
 		"dpowerflow":      strconv.FormatInt(r.PowerFlow, 10),
-		"export":          strconv.FormatInt(int64(r.Export*1000.0), 10),
-		"import":          strconv.FormatInt(int64(r.Import*1000), 10),
+		"import":          strconv.FormatInt(int64(math.Abs(r.Import*1000)), 10),
+		"export":          strconv.FormatInt(int64(math.Abs(r.Export*1000)), 10),
 		"load":            strconv.FormatInt(int64(r.Load*1000), 10),
 		"solar":           strconv.FormatInt(int64((r.Ppv1+r.Ppv2)*1000), 10),
 		"soc":             strconv.FormatInt(r.Soc, 10),
-		"charge":          strconv.FormatInt(int64(r.Charge*1000), 10),
-		"discharge":       strconv.FormatInt(int64(r.Discharge*1000), 10),
+		"charge":          strconv.FormatInt(int64(math.Abs(r.Charge*1000)), 10),
+		"discharge":       strconv.FormatInt(int64(math.Abs(r.Discharge*1000)), 10),
 		"gridpoweroutage": strconv.FormatInt(r.GridPowerOutage, 10),
 		"temperature":     strconv.FormatFloat(r.Temperature, 'f', 2, 32),
 		"batteryvoltage":  strconv.FormatFloat(r.BatteryVoltage, 'f', 2, 32),
