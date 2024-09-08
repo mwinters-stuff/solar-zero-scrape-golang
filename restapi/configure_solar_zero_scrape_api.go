@@ -41,11 +41,11 @@ func configureFlags(api *operations.SolarZeroScrapeAPIAPI) {
 		LongDescription:  "MQTT Options",
 		Options:          &opts.MQTTOptions,
 	})
-	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, swag.CommandLineOptionsGroup{
-		ShortDescription: "other",
-		LongDescription:  "Other Options",
-		Options:          &opts.OtherOptions,
-	})
+	// api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, swag.CommandLineOptionsGroup{
+	// 	ShortDescription: "other",
+	// 	LongDescription:  "Other Options",
+	// 	// Options:          &opts.OtherOptions,
+	// })
 }
 
 func configureAPI(api *operations.SolarZeroScrapeAPIAPI) http.Handler {
@@ -54,7 +54,7 @@ func configureAPI(api *operations.SolarZeroScrapeAPIAPI) http.Handler {
 	opts.SolarZeroOptions = *api.CommandLineOptionsGroups[0].Options.(*solarzero.SolarZeroOptions)
 	opts.InfluxDBOptions = *api.CommandLineOptionsGroups[1].Options.(*solarzero.InfluxDBOptions)
 	opts.MQTTOptions = *api.CommandLineOptionsGroups[2].Options.(*solarzero.MQTTOptions)
-	opts.OtherOptions = *api.CommandLineOptionsGroups[3].Options.(*solarzero.OtherOptions)
+	// opts.OtherOptions = *api.CommandLineOptionsGroups[3].Options.(*solarzero.OtherOptions)
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if opts.SolarZeroOptions.Debug {
@@ -73,17 +73,15 @@ func configureAPI(api *operations.SolarZeroScrapeAPIAPI) http.Handler {
 	go solarZeroScrape.Start()
 
 	api.JSONConsumer = runtime.JSONConsumer()
-
 	api.JSONProducer = runtime.JSONProducer()
 	// api.TxtProducer = runtime.TextProducer()
 
 	api.HTTPAPIGetHandler = http_api.GetHandlerFunc(func(params http_api.GetParams) middleware.Responder {
 		return http_api.NewGetOK().WithPayload(
 			map[string]any{
-				"currentData": solarZeroScrape.CurrentData(),
-				"dayData":     solarZeroScrape.DayData(),
-				"monthData":   solarZeroScrape.MonthData(),
-				"yearData":    solarZeroScrape.YearData(),
+				"data":     solarZeroScrape.Data(),
+				"daily":    solarZeroScrape.Daily(),
+				"customer": solarZeroScrape.Customer(),
 			})
 	})
 

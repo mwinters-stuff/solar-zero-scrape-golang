@@ -22,18 +22,18 @@ type MQTTOptions struct {
 	Password  string `long:"mqtt-password" description:"MQTT Password" `
 }
 
-type OtherOptions struct {
-	UserPoolId             string `long:"user-pool-id" default:"us-west-2_NoMpv1v1A"`
-	ClientId               string `long:"client-id" default:"6mgtqq7vvf7eo3r3qrsg6kl1tf"`
-	ApiRegion              string `long:"api-region" default:"us-west-2"`
-	ApiGatewayURL          string `long:"api-gateway-url" default:"https://d6nfzye2cb.execute-api.us-west-2.amazonaws.com"`
-	ApiKey                 string `long:"api-key" default:"mA0UW2ldUUQBY3e9bZWq9lCeKQUNCZC9oKidvdbb"`
-	ApiSolarZeroApiAddress string `long:"api-solar-zero-api-address" default:"sunvolt.pnz.technology"`
-}
+// type OtherOptions struct {
+// 	UserPoolId             string `long:"user-pool-id" default:"us-west-2_NoMpv1v1A"`
+// 	ClientId               string `long:"client-id" default:"6mgtqq7vvf7eo3r3qrsg6kl1tf"`
+// 	ApiRegion              string `long:"api-region" default:"us-west-2"`
+// 	ApiGatewayURL          string `long:"api-gateway-url" default:"https://d6nfzye2cb.execute-api.us-west-2.amazonaws.com"`
+// 	ApiKey                 string `long:"api-key" default:"mA0UW2ldUUQBY3e9bZWq9lCeKQUNCZC9oKidvdbb"`
+// 	ApiSolarZeroApiAddress string `long:"api-solar-zero-api-address" default:"sunvolt.pnz.technology"`
+// }
 
 type AllSolarZeroOptions struct {
 	SolarZeroOptions SolarZeroOptions
 	InfluxDBOptions  InfluxDBOptions
 	MQTTOptions      MQTTOptions
-	OtherOptions     OtherOptions
+	// OtherOptions     OtherOptions
 }

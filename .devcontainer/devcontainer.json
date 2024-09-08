@@ -36,7 +36,8 @@
 			"extensions": [
 				"golang.Go",
 				"golang.go",
-				"eamodio.gitlens"
+				"eamodio.gitlens",
+				"anweber.httpbook"
 			]
 		},
 

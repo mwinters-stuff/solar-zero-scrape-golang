@@ -1,0 +1,105 @@
+# @name auth
+POST https://api-web.solarzero.co.nz/v1/auth/signin/username
+Content-Type: application/json
+x-correlation-id: 2645f86f-9e70-4326-b7a4-6dfa759bc580
+
+{
+  "username": "mathew@winters.nz",
+  "password": "WxYcpTw99#24XNL"
+}
+
+HTTP/1.1 200  - OK
+date: Fri, 06 Sep 2024 23:49:29 GMT
+server: Apache
+strict-transport-security: max-age=31536000; includeSubDomains, max-age=15552000; includeSubDomains
+x-frame-options: SAMEORIGIN, SAMEORIGIN
+x-content-type-options: nosniff, nosniff
+x-xss-protection: 1; mode=block, 0
+content-security-policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+cross-origin-opener-policy: same-origin
+cross-origin-resource-policy: same-origin
+origin-agent-cluster: ?1
+referrer-policy: no-referrer
+x-dns-prefetch-control: off
+x-download-options: noopen
+x-permitted-cross-domain-policies: none
+access-control-allow-origin: *
+x-correlation-id: 2645f86f-9e70-4326-b7a4-6dfa759bc580
+content-type: application/json; charset=utf-8
+etag: W/"10d2-cblFiPB6BBSkUih+3qvnjyf1g3I"
+vary: Accept-Encoding
+content-encoding: gzip
+keep-alive: timeout=30, max=100
+connection: Keep-Alive
+transfer-encoding: chunked
+###
+# @name customer
+GET https://api-web.solarzero.co.nz/v1/customers
+Authorization: Bearer {{auth.tokens.idToken}}
+x-correlation-id: 2645f86f-9e70-4326-b7a4-6dfa759bc580
+x-session-id: {{auth.tokens.sessionId}}
+Content-Type: application/json
+
+HTTP/1.1 200  - OK
+date: Fri, 06 Sep 2024 23:49:33 GMT
+server: Apache
+strict-transport-security: max-age=31536000; includeSubDomains, max-age=15552000; includeSubDomains
+x-frame-options: SAMEORIGIN, SAMEORIGIN
+x-content-type-options: nosniff, nosniff
+x-xss-protection: 1; mode=block, 0
+content-security-policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+cross-origin-opener-policy: same-origin
+cross-origin-resource-policy: same-origin
+origin-agent-cluster: ?1
+referrer-policy: no-referrer
+x-dns-prefetch-control: off
+x-download-options: noopen
+x-permitted-cross-domain-policies: none
+access-control-allow-origin: *
+x-correlation-id: 2645f86f-9e70-4326-b7a4-6dfa759bc580
+content-type: application/json; charset=utf-8
+etag: W/"64d-SekvXu/TnDan069A/FhFR2+ljSc"
+vary: Accept-Encoding
+content-encoding: gzip
+keep-alive: timeout=30, max=99
+connection: Keep-Alive
+transfer-encoding: chunked
+###
+# @name get1
+POST https://api-web.solarzero.co.nz/v1/dashboard/data
+Authorization: Bearer {{auth.tokens.idToken}}
+x-correlation-id: 2645f86f-9e70-4326-b7a4-6dfa759bc580
+Content-Type: application/json
+x-session-id: {{auth.tokens.sessionId}}
+
+{
+  "siteId": "SC-21-059894",
+  "timezone": "Pacific/Auckland",
+  "providerId": "nz-ecotricity",
+  "hasTou": true
+}
+
+HTTP/1.1 200  - OK
+date: Fri, 06 Sep 2024 23:49:39 GMT
+server: Apache
+strict-transport-security: max-age=31536000; includeSubDomains, max-age=15552000; includeSubDomains
+x-frame-options: SAMEORIGIN, SAMEORIGIN
+x-content-type-options: nosniff, nosniff
+x-xss-protection: 1; mode=block, 0
+content-security-policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+cross-origin-opener-policy: same-origin
+cross-origin-resource-policy: same-origin
+origin-agent-cluster: ?1
+referrer-policy: no-referrer
+x-dns-prefetch-control: off
+x-download-options: noopen
+x-permitted-cross-domain-policies: none
+access-control-allow-origin: *
+x-correlation-id: 2645f86f-9e70-4326-b7a4-6dfa759bc580
+content-type: application/json; charset=utf-8
+etag: W/"f64-gQLTlyv0k4+ervXiLm3Q+XsQUc0"
+vary: Accept-Encoding
+content-encoding: gzip
+keep-alive: timeout=30, max=100
+connection: Keep-Alive
+transfer-encoding: chunked

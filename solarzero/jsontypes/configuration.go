@@ -52,16 +52,6 @@ type Mqtt struct {
 }
 
 type SolarZero struct {
-	Username   string `json:"Username"`
-	Password   string `json:"Password"`
-	UserPoolID string `json:"UserPoolId"`
-	ClientID   string `json:"ClientId"`
-	API        API    `json:"API"`
-}
-
-type API struct {
-	Region              string `json:"Region"`
-	APIGatewayURL       string `json:"ApiGatewayURL"`
-	APIKey              string `json:"ApiKey"`
-	SolarZeroAPIAddress string `json:"SolarZeroApiAddress"`
+	Username string `json:"Username"`
+	Password string `json:"Password"`
 }
