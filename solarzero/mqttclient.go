@@ -2,8 +2,6 @@ package solarzero
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"strconv"
 	"time"
 
@@ -20,14 +18,13 @@ type MQTTClient interface {
 
 	WriteData(scrape SolarZeroScrape)
 	WriteCurrentData(scrape SolarZeroScrape)
-	WriteDayData(scrape SolarZeroScrape)
-	WriteMonthData(scrape SolarZeroScrape)
-	WriteYearData(scrape SolarZeroScrape)
+	PublishHomeAssistantDiscovery()
 }
 
 type mqttClientImpl struct {
-	config *jsontypes.Configuration
-	client mqtt.Client
+	config    *jsontypes.Configuration
+	client    mqtt.Client
+	baseTopic string
 }
 
 func NewMQTTClientImpl(config *jsontypes.Configuration) MQTTClient {
@@ -44,10 +41,11 @@ var defaultPublushHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqt
 
 func (mq *mqttClientImpl) Connect() error {
 
-	mqtt.ERROR = log.New(os.Stdout, "[ERROR] ", 0)
-	mqtt.CRITICAL = log.New(os.Stdout, "[CRIT] ", 0)
-	mqtt.WARN = log.New(os.Stdout, "[WARN]  ", 0)
-	mqtt.DEBUG = log.New(os.Stdout, "[DEBUG] ", 0)
+	// mqtt.ERROR = log.New(os.Stdout, "[ERROR] ", 0)
+	// mqtt.CRITICAL = log.New(os.Stdout, "[CRIT] ", 0)
+	// mqtt.WARN = log.New(os.Stdout, "[WARN]  ", 0)
+	// mqtt.DEBUG = log.New(os.Stdout, "[DEBUG] ", 0)
+	mq.baseTopic = fmt.Sprintf("homeassistant/sensor/%[1]s/%[1]s", mq.config.Mqtt.BaseTopic)
 
 	opts := mqtt.NewClientOptions().
 		AddBroker(mq.config.Mqtt.URL).
@@ -74,19 +72,17 @@ func (mq *mqttClientImpl) OnConnectHandler(client mqtt.Client) {
 
 func (mq *mqttClientImpl) WriteData(scrape SolarZeroScrape) {
 	Logger.Info().Msg("Writing to MQTT")
-	
-  mq.publish("status", "ONLINE")
+
+	mq.publish("status", "ONLINE")
 	mq.PublishHomeAssistantDiscovery()
 
-  mq.WriteCurrentData(scrape)
-	mq.WriteDayData(scrape)
-	mq.WriteMonthData(scrape)
-	mq.WriteYearData(scrape)
+	mq.WriteCurrentData(scrape)
 
 	Logger.Info().Msg("Done Writing to MQTT")
 }
 
 func (mq *mqttClientImpl) publish(topic string, payload string) {
+	Logger.Debug().Msgf("MQTT %s -> %s", topic, payload)
 	t := mq.client.Publish(fmt.Sprintf("%s/%s", mq.config.Mqtt.BaseTopic, topic), 0, true, payload)
 	go func() {
 		_ = t.Wait() // Can also use '<-t.Done()' in releases > 1.2.0
@@ -96,85 +92,115 @@ func (mq *mqttClientImpl) publish(topic string, payload string) {
 	}()
 }
 
+func formatFloat(value float64) string {
+	// return strconv.FormatFloat(value, 'f', 2, 64)
+	return strconv.FormatInt(int64(value*1000), 10)
+}
+
+func formatFloatN(value float64) string {
+	return strconv.FormatFloat(value, 'f', 2, 64)
+}
+
+func formatInt(value int64) string {
+	return strconv.FormatInt(value, 10)
+}
+
 func (mq *mqttClientImpl) WriteCurrentData(scrape SolarZeroScrape) {
 	Logger.Debug().Msgf("Write to mqtt Current %s", fmt.Sprint(time.Now()))
-	currentData := scrape.CurrentData()
-	if currentData.DeviceStatus == 1 {
-		fields := currentData.GetMQTTFields()
+	currentData := scrape.Data()
 
-		stamp, _ := parseLocalTimestamp(currentData.ReceivedDate)
-		mq.publish("current/received", fmt.Sprint(stamp))
+	mq.publish("current/received", fmt.Sprint(time.Unix(0, currentData.EnergyFlow.LastUpdate*int64(time.Millisecond))))
 
-		for key, value := range fields {
-			mq.publish(fmt.Sprintf("current/%s", key), value)
-		}
+	mq.publish("current/load", formatFloat(currentData.EnergyFlow.Home))
+	mq.publish("current/solar", formatFloat(currentData.EnergyFlow.Solar))
+
+	if currentData.EnergyFlow.GridImport {
+		mq.publish("current/import", formatFloat(currentData.EnergyFlow.Grid))
+		mq.publish("current/export", formatFloat(0.0))
+	} else if currentData.EnergyFlow.GridExport {
+		mq.publish("current/export", formatFloat(currentData.EnergyFlow.Grid))
+		mq.publish("current/import", formatFloat(0.0))
+	} else {
+		mq.publish("current/import", formatFloat(0.0))
+		mq.publish("current/export", formatFloat(0.0))
+	}
+	if currentData.EnergyFlow.BatteryUsed {
+		mq.publish("current/battery-use", formatFloat(currentData.EnergyFlow.Battery))
+		mq.publish("current/battery-charge", formatFloat(0.0))
+	} else if currentData.EnergyFlow.BatteryCharged {
+		mq.publish("current/battery-charge", formatFloat(currentData.EnergyFlow.Battery))
+		mq.publish("current/battery-use", formatFloat(0.0))
+	} else {
+		mq.publish("current/battery-charge", formatFloat(0.0))
+		mq.publish("current/battery-use", formatFloat(0.0))
 	}
 
-	// record totals
+	mq.publish("current/grid-import", strconv.FormatBool(currentData.EnergyFlow.GridImport))
+	mq.publish("current/grid-export", strconv.FormatBool(currentData.EnergyFlow.GridExport))
+	mq.publish("current/battery-used", strconv.FormatBool(currentData.EnergyFlow.BatteryUsed))
+	mq.publish("current/battery-charged", strconv.FormatBool(currentData.EnergyFlow.BatteryCharged))
 
-	mq.publish("today/used", strconv.FormatInt(int64((scrape.ElectricityUse().ElectricityUse)*1000.0), 10))
-	mq.publish("today/exported", strconv.FormatInt(int64((scrape.SolarUse().ExportAmount)*1000.0), 10))
-	mq.publish("today/imported", strconv.FormatInt(int64((scrape.SolarVsGrid().GridAmount)*1000.0), 10))
-	mq.publish("today/solar-used", strconv.FormatInt(int64((scrape.SolarUse().SelfUseAmount)*1000.0), 10))
-	mq.publish("today/solar-used-percent", strconv.FormatInt(scrape.SolarUse().ExportPercent, 10))
-	mq.publish("today/exported-percent", strconv.FormatInt(scrape.SolarUse().SelfUsePercent, 10))
+	mq.publish("flows/threshold", formatInt(currentData.EnergyFlow.Flows.Threshold))
+	mq.publish("flows/solartohome", formatFloat(currentData.EnergyFlow.Flows.Solartohome))
+	mq.publish("flows/solartobattery", formatFloat(currentData.EnergyFlow.Flows.Solartobattery))
+	mq.publish("flows/solartogrid", formatFloat(currentData.EnergyFlow.Flows.Solartogrid))
+	mq.publish("flows/gridtohome", formatFloat(currentData.EnergyFlow.Flows.Gridtohome))
+	mq.publish("flows/batterytohome", formatFloat(currentData.EnergyFlow.Flows.Batterytohome))
+	mq.publish("flows/batterytogrid", formatFloat(currentData.EnergyFlow.Flows.Batterytogrid))
+	mq.publish("flows/gridtobattery", formatFloat(currentData.EnergyFlow.Flows.Gridtobattery))
 
-	mq.publish("today/solar-vs-grid-grid-percent", strconv.FormatInt(scrape.SolarVsGrid().GridPercent, 10))
-	mq.publish("today/solar-vs-grid-grid", strconv.FormatInt(int64((scrape.SolarVsGrid().GridAmount)*1000.0), 10))
-	mq.publish("today/solar-vs-grid-solar-percent", strconv.FormatInt(scrape.SolarVsGrid().SolarPercent, 10))
-	mq.publish("today/solar-vs-grid-solar", strconv.FormatInt(int64((scrape.SolarVsGrid().SolarAmount)*1000.0), 10))
+	mq.publish("battery/capacity", formatFloat(currentData.Monitor.Battery.Capacity))
+	mq.publish("battery/charged", formatFloatN(currentData.Monitor.Battery.Charged))
 
-	mq.publish("today/solar", strconv.FormatInt(int64((scrape.SolarUse().ExportAmount+scrape.SolarUse().SelfUseAmount)*1000.0), 10))
-}
+	mq.publish("carbon/value", formatFloatN(currentData.Monitor.Carbon.Value))
+	mq.publish("carbon/desc", currentData.Monitor.Carbon.Desc)
 
-func (mq *mqttClientImpl) WriteDayData(scrape SolarZeroScrape) {
-	// for _, hourData := range scrape.DayData() {
+	mq.publish("home/comments", currentData.Monitor.Home.Comments)
+	mq.publish("home/value1", formatInt(currentData.Monitor.Home.Value1.Value))
+	mq.publish("home/value2", formatInt(currentData.Monitor.Home.Value2.Value))
 
-	// 	mqttFields := hourData.GetMQTTFields()
-	// 	if mqttFields != nil {
-	// 		stamp, _ := parseLocalTimestamp(hourData.ReceivedDate)
+	mq.publish("solar/comments", currentData.Monitor.Solar.Comments)
+	mq.publish("solar/value1", formatInt(currentData.Monitor.Solar.Value1.Value))
+	mq.publish("solar/value2", formatInt(currentData.Monitor.Solar.Value2.Value))
 
-	// 		for key, value := range *mqttFields {
-	// 			mq.publish(fmt.Sprintf("day/%d/%s", stamp.Hour(), key), value)
-	// 			// Logger.Debug().Msgf("Write to mqtt Hour %d", stamp.Hour())
-	// 		}
-	// 	}
+	mq.publish("total/home-usage", formatInt(currentData.Cards.HomeUsage.Value))
+	mq.publish("total/solar-utilization", formatInt(currentData.Cards.SolarUtilization.Value))
+	mq.publish("total/home-usage-total", formatFloat(currentData.Cards.HomeUsageTotal.Value))
+	mq.publish("total/solar-util-total", formatFloat(currentData.Cards.SolarUtilTotal.Value))
+	mq.publish("total/grid-import-total", formatFloat(currentData.Cards.GridImportTotal.Value))
+	mq.publish("total/grid-export-total", formatFloat(currentData.Cards.GridExportTotal.Value))
 
-	// }
-
-}
-
-func (mq *mqttClientImpl) WriteMonthData(scrape SolarZeroScrape) {
-	// for _, dayData := range scrape.MonthData() {
-
-	// 	mqttFields := dayData.GetMQTTFields()
-	// 	if mqttFields != nil {
-	// 		stamp, _ := parseLocalTimestamp(dayData.ReceivedDate)
-
-	// 		for key, value := range *mqttFields {
-	// 			mq.publish(fmt.Sprintf("month/%d/%s", stamp.Day(), key), value)
-	// 		}
-	// 	}
-
-	// }
-}
-
-func (mq *mqttClientImpl) WriteYearData(scrape SolarZeroScrape) {
-	// for _, monthData := range scrape.YearData() {
-
-	// 	mqttFields := monthData.GetMQTTFields()
-	// 	if mqttFields != nil {
-	// 		stamp, _ := parseLocalTimestamp(monthData.ReceivedDate)
-
-	// 		for key, value := range *mqttFields {
-	// 			mq.publish(fmt.Sprintf("year/%d/%s", stamp.Year(), key), value)
-	// 		}
-	// 	}
-
-	// }
+	customer := scrape.Customer()
+	today := time.Now()
+	currentPrice := 0.0
+	currentGridState := currentData.Tou.Grid.State
+	if today.Weekday() == time.Saturday || today.Weekday() == time.Sunday {
+		if currentGridState == "shoulder" {
+			currentPrice = customer.Provider.Details.Weekends.Shoulder.Rate
+		}
+		if currentGridState == "offPeak" {
+			currentPrice = customer.Provider.Details.Weekends.OffPeak.Rate
+		}
+		if currentGridState == "peak" {
+			currentPrice = customer.Provider.Details.Weekends.Peak.Rate
+		}
+	} else {
+		if currentGridState == "shoulder" {
+			currentPrice = customer.Provider.Details.Weekdays.Shoulder.Rate
+		}
+		if currentGridState == "offPeak" {
+			currentPrice = customer.Provider.Details.Weekdays.OffPeak.Rate
+		}
+		if currentGridState == "peak" {
+			currentPrice = customer.Provider.Details.Weekdays.Peak.Rate
+		}
+	}
+	mq.publish("power-price/current", formatFloatN(currentPrice))
 }
 
 func (mq *mqttClientImpl) publishTopic(topic string, payload string) {
+	Logger.Debug().Msgf("MQTT %s -> %s", topic, payload)
+
 	t := mq.client.Publish(topic, 0, true, payload)
 	go func() {
 		_ = t.Done() // Can also use '<-t.Done()' in releases > 1.2.0
@@ -184,362 +210,133 @@ func (mq *mqttClientImpl) publishTopic(topic string, payload string) {
 	}()
 }
 
+func (mq *mqttClientImpl) publishDiscovery(group, what, label, unit_of_meas, dev_class, measurement, icon string) {
+	mq.publishTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseTopic, group, what),
+		fmt.Sprintf(
+			`
+    {
+      "uniq_id": "%[1]s-%[2]s-%[3]s",
+      "name": "%[4]s",
+      "stat_t": "%[1]s/%[2]s/%[3]s",
+      "unit_of_meas": "%[5]s",
+      "sug_dsp_prc": 0,
+      "dev_cla": "%[6]s",
+      "state_class": "%[7]s",
+      "icon": "%[8]s",
+      "dev": {
+        "sa": "Outside",
+        "ids": "%[1]s",
+        "name": "Solar Zero"
+      },
+      "avty": {
+        "t": "%[1]s/status",
+        "pl_avail": "ONLINE",
+        "pl_not_avail": "OFFLINE"
+      }
+    }`,
+			mq.config.Mqtt.BaseTopic, // 1
+			group,                    // 2
+			what,                     // 3
+			label,                    // 4
+			unit_of_meas,             // 5
+			dev_class,                // 6
+			measurement,              // 7
+			icon,                     // 8
+		))
+}
+
+func (mq *mqttClientImpl) publishDiscovery2DP(group, what, label, unit_of_meas, dev_class, measurement, icon string) {
+	mq.publishTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseTopic, group, what),
+		fmt.Sprintf(
+			`
+    {
+      "uniq_id": "%[1]s-%[2]s-%[3]s",
+      "name": "%[4]s",
+      "stat_t": "%[1]s/%[2]s/%[3]s",
+      "unit_of_meas": "%[5]s",
+      "sug_dsp_prc": 2,
+      "dev_cla": "%[6]s",
+      "state_class": "%[7]s",
+      "icon": "%[8]s",
+      "dev": {
+        "sa": "Outside",
+        "ids": "%[1]s",
+        "name": "Solar Zero"
+      },
+      "avty": {
+        "t": "%[1]s/status",
+        "pl_avail": "ONLINE",
+        "pl_not_avail": "OFFLINE"
+      }
+    }`,
+			mq.config.Mqtt.BaseTopic, // 1
+			group,                    // 2
+			what,                     // 3
+			label,                    // 4
+			unit_of_meas,             // 5
+			dev_class,                // 6
+			measurement,              // 7
+			icon,                     // 8
+		))
+}
+
+func (mq *mqttClientImpl) publishDiscoveryLastResetMidnight(group, what, label, unit_of_meas, dev_class, measurement, icon string) {
+	mq.publishTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseTopic, group, what),
+		fmt.Sprintf(
+			`
+    {
+      "uniq_id": "%[1]s-%[2]s-%[3]s",
+      "name": "%[4]s",
+      "stat_t": "%[1]s/%[2]s/%[3]s",
+      "unit_of_meas": "%[5]s",
+      "sug_dsp_prc": 0,
+      "dev_cla": "%[6]s",
+      "state_class": "%[7]s",
+      "icon": "%[8]s",
+      "last_reset_value_template": "{{ now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat() }}",
+      "dev": {
+        "sa": "Outside",
+        "ids": "%[1]s",
+        "name": "Solar Zero"
+      },
+      "avty": {
+        "t": "%[1]s/status",
+        "pl_avail": "ONLINE",
+        "pl_not_avail": "OFFLINE"
+      }
+    }`,
+			mq.config.Mqtt.BaseTopic, // 1
+			group,                    // 2
+			what,                     // 3
+			label,                    // 4
+			unit_of_meas,             // 5
+			dev_class,                // 6
+			measurement,              // 7
+			icon,                     // 8
+		))
+}
+
 func (mq *mqttClientImpl) PublishHomeAssistantDiscovery() {
-	baseTopic := fmt.Sprintf("homeassistant/sensor/%[1]s/%[1]s", mq.config.Mqtt.BaseTopic)
 
-	mq.publishTopic(fmt.Sprintf("%s-temperature/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-temperature",
-    "name": "Temperature",
-    "stat_t": "%[1]s/current/temperature",
-    "unit_of_meas": "°C",
-    "sug_dsp_prc": 1,
-    "dev_cla": "temperature",
-    "icon": "mdi:thermometer",
-    "dev": {
-      "sa": "Outside",
-      "ids": "%[1]s",
-      "name": "Solar Zero"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
+	mq.publishDiscovery("current", "load", "House Load", "W", "power", "measurement", "mdi:home-lightning-bolt")
+	mq.publishDiscovery("current", "solar", "Solar", "W", "power", "measurement", "mdi:solar-power")
+	mq.publishDiscovery("current", "import", "Grid Import", "W", "power", "measurement", "mdi:home-import-outline")
+	mq.publishDiscovery("current", "export", "Grid Export", "W", "power", "measurement", "mdi:home-export-outline")
 
-	// baseTopic = fmt.Sprintf("homeassistant/power/%[1]s/%[1]s-", mq.config.Mqtt.BaseTopic)
+	mq.publishDiscoveryLastResetMidnight("current", "battery-use", "Battery Use", "Wh", "energy", "total", "mdi:battery-arrow-down")
+	mq.publishDiscoveryLastResetMidnight("current", "battery-charge", "Battery Charge", "Wh", "energy", "total", "mdi:battery-charging-80")
 
-	mq.publishTopic(fmt.Sprintf("%s-load/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-load",
-    "name": "Load",
-    "stat_t": "%[1]s/current/load",
-    "unit_of_meas": "W",
-    "sug_dsp_prc": 1,
-    "dev_cla": "power",
-    "state_class": "measurement",
-    "icon": "mdi:power-plug-outline",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
+	mq.publishDiscovery("total", "home-usage", "Home Usage", "%", "energy", "measurement", "mdi:home-lightning-bolt-outline")
+	mq.publishDiscovery("total", "solar-utilization", "Solar Utilization", "%", "energy", "measurement", "mdi:solar-power")
 
-	mq.publishTopic(fmt.Sprintf("%s-solar/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-solar",
-    "name": "Solar",
-    "stat_t": "%[1]s/current/solar",
-    "unit_of_meas": "W",
-    "sug_dsp_prc": 1,
-    "dev_cla": "power",
-		"state_class": "measurement",
-    "icon": "mdi:solar-power",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
+	mq.publishDiscovery("total", "home-usage-total", "Home Usage Total", "Wh", "energy", "total_increasing", "mdi:home-lightning-bolt")
+	mq.publishDiscovery("total", "solar-util-total", "Solar Util Total", "Wh", "energy", "total_increasing", "mdi:solar-power-variant")
+	mq.publishDiscovery("total", "grid-import-total", "Grid Import Total", "Wh", "energy", "total_increasing", "mdi:transmission-tower-import")
+	mq.publishDiscovery("total", "grid-export-total", "Grid Export Total", "Wh", "energy", "total_increasing", "mdi:transmission-tower-export")
 
-	mq.publishTopic(fmt.Sprintf("%s-import/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-import",
-    "name": "Import",
-    "stat_t": "%[1]s/current/import",
-    "unit_of_meas": "W",
-    "sug_dsp_prc": 1,
-    "dev_cla": "power",
-		"state_class": "measurement",
-    "icon": "mdi:transmission-tower-import",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
-	mq.publishTopic(fmt.Sprintf("%s-export/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-export",
-    "name": "Export",
-    "stat_t": "%[1]s/current/export",
-    "unit_of_meas": "W",
-    "sug_dsp_prc": 1,
-    "dev_cla": "power",
-		"state_class": "measurement",
-    "icon": "mdi:transmission-tower-export",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
-	mq.publishTopic(fmt.Sprintf("%s-soc/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-soc",
-    "name": "Battery SOC",
-    "stat_t": "%[1]s/current/soc",
-    "unit_of_meas": "%%",
-    "sug_dsp_prc": 1,
-    "dev_cla": "battery",
-		"state_class": "measurement",
-    "icon": "mdi:battery-high",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
+	mq.publishDiscovery("battery", "capacity", "Battery Capacity", "Wh", "energy", "total_increasing", "mdi:home-battery-outline")
+	mq.publishDiscovery("battery", "charged", "Battery SOC", "%", "battery", "measurement", "mdi:battery-heart-outline")
 
-	mq.publishTopic(fmt.Sprintf("%s-batteryvoltage/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-batteryvoltage",
-    "name": "Battery Volts",
-    "stat_t": "%[1]s/current/batteryvoltage",
-    "unit_of_meas": "V",
-    "sug_dsp_prc": 1,
-    "dev_cla": "voltage",
-		"state_class": "measurement",
-    "icon": "mdi:battery-plus-outline",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
+	mq.publishDiscovery2DP("power-price", "current", "Current Grid Rate", "NZD/kWh", "monetary", "measurement", "mdi:currency-usd")
 
-	mq.publishTopic(fmt.Sprintf("%s-batterycurrent/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-batterycurrent",
-    "name": "Battery Current",
-    "stat_t": "%[1]s/current/batterycurrent",
-    "unit_of_meas": "A",
-    "sug_dsp_prc": 1,
-    "dev_cla": "current",
-		"state_class": "measurement",
-    "icon": "mdi:battery-charging-medium",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
-
-	mq.publishTopic(fmt.Sprintf("%s-discharge/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-discharge",
-    "name": "Battery Discharge",
-    "stat_t": "%[1]s/current/discharge",
-    "unit_of_meas": "Wh",
-    "sug_dsp_prc": 1,
-    "dev_cla": "energy",
-		"state_class": "total",
-    "icon": "mdi:battery-20",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
-
-	mq.publishTopic(fmt.Sprintf("%s-charge/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-charge",
-    "name": "Battery Charge",
-    "stat_t": "%[1]s/current/charge",
-    "unit_of_meas": "Wh",
-    "sug_dsp_prc": 1,
-    "dev_cla": "energy",
-		"state_class": "total",
-    "icon": "mdi:battery-charging-90",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
-
-	mq.publishTopic(fmt.Sprintf("%s-today-used/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-today-used",
-    "name": "Used Today",
-    "stat_t": "%[1]s/today/used",
-    "unit_of_meas": "Wh",
-    "sug_dsp_prc": 1,
-    "dev_cla": "energy",
-    "state_class": "total_increasing",
-    "icon": "mdi:home-lightning-bolt",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
-
-	mq.publishTopic(fmt.Sprintf("%s-today-solar/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-today-solar",
-    "name": "Solar Generated Today",
-    "stat_t": "%[1]s/today/solar",
-    "unit_of_meas": "Wh",
-    "sug_dsp_prc": 1,
-    "dev_cla": "energy",
-    "state_class": "total_increasing",
-    "icon": "mdi:solar-panel-large",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
-
-	mq.publishTopic(fmt.Sprintf("%s-today-exported/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-today-exported",
-    "name": "Exported Today",
-    "stat_t": "%[1]s/today/exported",
-    "unit_of_meas": "Wh",
-    "sug_dsp_prc": 1,
-    "dev_cla": "energy",
-    "state_class": "total_increasing",
-    "icon": "mdi:transmission-tower-export",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
-
-	mq.publishTopic(fmt.Sprintf("%s-today-imported/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-today-imported",
-    "name": "Imported Today",
-    "stat_t": "%[1]s/today/imported",
-    "unit_of_meas": "Wh",
-    "sug_dsp_prc": 1,
-    "dev_cla": "energy",
-    "state_class": "total_increasing",
-    "icon": "mdi:transmission-tower-export",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
-
-	mq.publishTopic(fmt.Sprintf("%s-today-solar-used/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-today-solar-used",
-    "name": "Solar Used Today",
-    "stat_t": "%[1]s/today/solar-used",
-    "unit_of_meas": "Wh",
-    "sug_dsp_prc": 1,
-    "dev_cla": "energy",
-    "state_class": "total_increasing",
-    "icon": "mdi:solar-power-variant-outline",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
-
-	mq.publishTopic(fmt.Sprintf("%s-today-solar-used-percent/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-today-solar-used-percent",
-    "name": "%% Solar Used Today",
-    "stat_t": "%[1]s/today/solar-used-percent",
-    "unit_of_meas": "%%",
-    "sug_dsp_prc": 1,
-    "state_class": "measurement",
-    "icon": "mdi:sun-angle-outline",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
-
-	mq.publishTopic(fmt.Sprintf("%s-today-exported-percent/config", baseTopic), fmt.Sprintf(`
-  {
-    "uniq_id": "%[1]s-today-exported-percent",
-    "name": "%% Solar Exported Today",
-    "stat_t": "%[1]s/today/exported-percent",
-    "unit_of_meas": "%%",
-    "sug_dsp_prc": 1,
-    "state_class": "measurement",
-    "icon": "mdi:transmission-tower-export",
-    "dev": {
-      "ids": "%[1]s"
-    },
-    "avty": {
-      "t": "%[1]s/status",
-      "pl_avail": "ONLINE",
-      "pl_not_avail": "OFFLINE"
-    }
-  }
-	`, mq.config.Mqtt.BaseTopic))
 }

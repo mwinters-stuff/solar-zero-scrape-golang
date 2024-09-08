@@ -2,7 +2,6 @@ package solarzero
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -105,69 +104,69 @@ func (iw *influxDBWriterImpl) WriteDailyData(scrape SolarZeroScrape) {
 }
 
 func (iw *influxDBWriterImpl) WriteCurrentData(scrape SolarZeroScrape) {
-	currentData := scrape.CurrentData()
-	if currentData.DeviceStatus == 1 {
+	// currentData := scrape.CurrentData()
+	// if currentData.DeviceStatus == 1 {
 
-		influxFields := currentData.GetInfluxFields()
-		stamp, _ := parseLocalTimestamp(currentData.ReceivedDate)
-		influxFields["Received"] = fmt.Sprint(stamp)
+	// 	influxFields := currentData.GetInfluxFields()
+	// 	stamp, _ := parseLocalTimestamp(currentData.ReceivedDate)
+	// 	influxFields["Received"] = fmt.Sprint(stamp)
 
-		Logger.Debug().Msgf("Write to influx Current %s", fmt.Sprint(stamp))
-		iw.writeAPI.WritePoint(influxdb2.NewPoint("solar", nil, influxFields, stamp))
-	}
+	// 	Logger.Debug().Msgf("Write to influx Current %s", fmt.Sprint(stamp))
+	// 	iw.writeAPI.WritePoint(influxdb2.NewPoint("solar", nil, influxFields, stamp))
+	// }
 
 }
 
 func (iw *influxDBWriterImpl) WriteDayData(scrape SolarZeroScrape) {
 
-	for _, hourData := range scrape.DayData() {
+	// for _, hourData := range scrape.DayData() {
 
-		influxFields := hourData.GetInfluxFields()
-		if influxFields != nil {
-			stamp, _ := parseLocalTimestamp(hourData.ReceivedDate)
-			(*influxFields)["Hour"] = fmt.Sprint(stamp)
-			iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-day",
-				map[string]string{
-					"date": fmt.Sprint(stamp),
-				},
-				*influxFields,
-				stamp))
-			Logger.Debug().Msgf("Write to influx Hour %s", fmt.Sprint(stamp))
-		}
+	// 	influxFields := hourData.GetInfluxFields()
+	// 	if influxFields != nil {
+	// 		stamp, _ := parseLocalTimestamp(hourData.ReceivedDate)
+	// 		(*influxFields)["Hour"] = fmt.Sprint(stamp)
+	// 		iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-day",
+	// 			map[string]string{
+	// 				"date": fmt.Sprint(stamp),
+	// 			},
+	// 			*influxFields,
+	// 			stamp))
+	// 		Logger.Debug().Msgf("Write to influx Hour %s", fmt.Sprint(stamp))
+	// 	}
 
-	}
+	// }
 }
 
 func (iw *influxDBWriterImpl) WriteMonthData(scrape SolarZeroScrape) {
-	for _, dayData := range scrape.MonthData() {
-		influxFields := dayData.GetInfluxFields()
-		if influxFields != nil {
-			stamp, _ := parseLocalTimestamp(dayData.ReceivedDate)
+	// for _, dayData := range scrape.MonthData() {
+	// 	influxFields := dayData.GetInfluxFields()
+	// 	if influxFields != nil {
+	// 		stamp, _ := parseLocalTimestamp(dayData.ReceivedDate)
 
-			iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-month",
-				map[string]string{
-					"date": fmt.Sprint(stamp),
-				},
-				*influxFields,
-				stamp))
-			Logger.Debug().Msgf("Write to influx Day %s", fmt.Sprint(stamp))
-		}
-	}
+	// 		iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-month",
+	// 			map[string]string{
+	// 				"date": fmt.Sprint(stamp),
+	// 			},
+	// 			*influxFields,
+	// 			stamp))
+	// 		Logger.Debug().Msgf("Write to influx Day %s", fmt.Sprint(stamp))
+	// 	}
+	// }
 }
 
 func (iw *influxDBWriterImpl) WriteYearData(scrape SolarZeroScrape) {
-	for _, monthData := range scrape.YearData() {
-		influxFields := monthData.GetInfluxFields()
-		if influxFields != nil {
-			stamp, _ := parseLocalTimestamp(monthData.ReceivedDate)
+	// for _, monthData := range scrape.YearData() {
+	// 	influxFields := monthData.GetInfluxFields()
+	// 	if influxFields != nil {
+	// 		stamp, _ := parseLocalTimestamp(monthData.ReceivedDate)
 
-			iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-year",
-				map[string]string{
-					"date": fmt.Sprint(stamp),
-				},
-				*influxFields,
-				stamp))
-			Logger.Debug().Msgf("Write to influx Month %s", fmt.Sprint(stamp))
-		}
-	}
+	// 		iw.writeAPI.WritePoint(influxdb2.NewPoint("solar-year",
+	// 			map[string]string{
+	// 				"date": fmt.Sprint(stamp),
+	// 			},
+	// 			*influxFields,
+	// 			stamp))
+	// 		Logger.Debug().Msgf("Write to influx Month %s", fmt.Sprint(stamp))
+	// 	}
+	// }
 }
