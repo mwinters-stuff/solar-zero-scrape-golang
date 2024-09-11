@@ -81,6 +81,9 @@ spec:
             {{- if .Values.influxdb.bucket }}
             - --influx-bucket={{ .Values.influxdb.bucket }}
             {{- end }}
+            {{- if .Values.influxdb.measurement }}
+            - --influx-measurement={{ .Values.influxdb.measurement }}
+            {{- end }}
 
             {{- if .Values.mqtt.hosturl }}
             - --mqtt-server-url={{ .Values.mqtt.hosturl }}

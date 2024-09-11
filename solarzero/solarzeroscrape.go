@@ -59,6 +59,7 @@ func NewSolarZeroScrape(options *AllSolarZeroOptions) SolarZeroScrape {
 		config.InfluxDB.Token = options.InfluxDBOptions.Token
 		config.InfluxDB.Org = options.InfluxDBOptions.Org
 		config.InfluxDB.Bucket = options.InfluxDBOptions.Bucket
+		config.InfluxDB.Measurement = options.InfluxDBOptions.Measurement
 
 		config.Mqtt.URL = options.MQTTOptions.ServerURL
 		config.Mqtt.Username = options.MQTTOptions.Username
@@ -122,6 +123,9 @@ func (szs *SolarZeroScrapeImpl) Start() {
 		}
 		if err == nil && szs.mqtt != nil {
 			szs.mqtt.WriteData(szs)
+		}
+		if err == nil && szs.influxdb != nil {
+			szs.influxdb.WriteData(szs)
 		}
 	})
 

@@ -38,10 +38,11 @@ type Configuration struct {
 }
 
 type InfluxDB struct {
-	Token   string `json:"Token"`
-	HostURL string `json:"HostUrl"`
-	Org     string `json:"Org"`
-	Bucket  string `json:"Bucket"`
+	Token       string `json:"Token"`
+	HostURL     string `json:"HostUrl"`
+	Org         string `json:"Org"`
+	Bucket      string `json:"Bucket"`
+	Measurement string `json:"Measurement"`
 }
 
 type Mqtt struct {
