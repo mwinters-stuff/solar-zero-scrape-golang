@@ -95,6 +95,7 @@ influxdb:
   token: thetoken
   org: example.org
   bucket: solar-zero
+  measurement: solar
 
 mqtt:
   hostUrl: mqtt://mqtt.org:1883

@@ -26,6 +26,7 @@
         "--influx-host-url", "https://INFLUXHOST",
         "--influx-org", "INFLUXORG",
         "--influx-bucket", "test",
+        "--influx-measurement","solarzero",
         "--mqtt-server-url","mqtt://MQTTSERVER:1883",
         "--mqtt-username","",
         "--mqtt-password","",
