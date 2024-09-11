@@ -75,7 +75,7 @@ func (iw *influxDBWriterImpl) WriteData(scrape SolarZeroScrape) {
 	influxFields["Received"] = fmt.Sprint(stamp)
 
 	Logger.Debug().Msgf("Write to influx Current %s", fmt.Sprint(stamp))
-	iw.writeAPI.WritePoint(influxdb2.NewPoint("solar2", nil, influxFields, stamp))
+	iw.writeAPI.WritePoint(influxdb2.NewPoint(iw.config.InfluxDB.Measurement, nil, influxFields, stamp))
 
 	iw.writeAPI.Flush()
 	Logger.Info().Msg("Done Writing to InfluxDB")
@@ -134,22 +134,4 @@ func (iw *influxDBWriterImpl) getInfluxFields(currentData jsontypes.DataResponse
 	m["total-grid-export-total"] = currentData.Cards.GridExportTotal.Value
 
 	return m
-}
-
-func (iw *influxDBWriterImpl) deleteData() {
-	// Get DeleteAPI
-	deleteAPI := iw.client.DeleteAPI()
-
-	// Define the time range for the delete operation
-	// If you want to delete all data, use a very large time range
-	start := time.Unix(0, 0) // Start time (Unix epoch)
-	end := time.Now().UTC()  // End time (current time)
-
-	// Perform the delete operation
-	err := deleteAPI.DeleteWithName(context.Background(), iw.config.InfluxDB.Org, iw.config.InfluxDB.Bucket, start, end, "")
-	if err != nil {
-		fmt.Printf("Error deleting data: %v\n", err)
-	} else {
-		fmt.Println("Data deleted successfully.")
-	}
 }
