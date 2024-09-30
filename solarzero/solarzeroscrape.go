@@ -407,6 +407,5 @@ func (szs *SolarZeroScrapeImpl) Ready() bool {
 }
 
 func (szs *SolarZeroScrapeImpl) Healthy() bool {
-	diff := time.Since(szs.lastGoodWriteTimestamp)
-	return diff > 0 && diff.Minutes() <= 10
+	return szs.ready
 }
