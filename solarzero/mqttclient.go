@@ -198,10 +198,10 @@ func (mq *mqttClientImpl) WriteCurrentData(scrape SolarZeroScrape) {
 	mq.publish("power-price/current", formatFloatN(currentPrice))
 }
 
-func (mq *mqttClientImpl) publishTopic(topic string, payload string) {
+func (mq *mqttClientImpl) publishDiscoveryTopic(topic string, payload string) {
 	Logger.Debug().Msgf("MQTT %s -> %s", topic, payload)
 
-	t := mq.client.Publish(topic, 0, false, payload)
+	t := mq.client.Publish(topic, 0, true, payload)
 	go func() {
 		_ = t.Done() // Can also use '<-t.Done()' in releases > 1.2.0
 		if t.Error() != nil {
@@ -211,7 +211,7 @@ func (mq *mqttClientImpl) publishTopic(topic string, payload string) {
 }
 
 func (mq *mqttClientImpl) publishDiscovery(group, what, label, unit_of_meas, dev_class, measurement, icon string) {
-	mq.publishTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseSensorTopic, group, what),
+	mq.publishDiscoveryTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseSensorTopic, group, what),
 		fmt.Sprintf(
 			`
     {
@@ -246,7 +246,7 @@ func (mq *mqttClientImpl) publishDiscovery(group, what, label, unit_of_meas, dev
 }
 
 func (mq *mqttClientImpl) publishDiscoveryNoIcon(group, what, label, unit_of_meas, dev_class, measurement string) {
-	mq.publishTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseSensorTopic, group, what),
+	mq.publishDiscoveryTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseSensorTopic, group, what),
 		fmt.Sprintf(
 			`
     {
@@ -279,7 +279,7 @@ func (mq *mqttClientImpl) publishDiscoveryNoIcon(group, what, label, unit_of_mea
 }
 
 func (mq *mqttClientImpl) publishBoolDiscovery(group, what, label, dev_class, icon, payload_on, payload_off string) {
-	mq.publishTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseBoolTopic, group, what),
+	mq.publishDiscoveryTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseBoolTopic, group, what),
 		fmt.Sprintf(
 			`
     {
@@ -314,7 +314,7 @@ func (mq *mqttClientImpl) publishBoolDiscovery(group, what, label, dev_class, ic
 }
 
 func (mq *mqttClientImpl) publishDiscovery2DP(group, what, label, unit_of_meas, dev_class, measurement, icon string) {
-	mq.publishTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseSensorTopic, group, what),
+	mq.publishDiscoveryTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseSensorTopic, group, what),
 		fmt.Sprintf(
 			`
     {
@@ -349,7 +349,7 @@ func (mq *mqttClientImpl) publishDiscovery2DP(group, what, label, unit_of_meas, 
 }
 
 func (mq *mqttClientImpl) publishDiscoveryLastResetMidnight(group, what, label, unit_of_meas, dev_class, measurement, icon string) {
-	mq.publishTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseSensorTopic, group, what),
+	mq.publishDiscoveryTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseSensorTopic, group, what),
 		fmt.Sprintf(
 			`
     {
