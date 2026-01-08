@@ -4,8 +4,8 @@ Content-Type: application/json
 x-correlation-id: 2645f86f-9e70-4326-b7a4-6dfa759bc580
 
 {
-  "username": "mathew@winters.nz",
-  "password": "WxYcpTw99#24XNL"
+  "username": "m",
+  "password": "p"
 }
 
 HTTP/1.1 200  - OK
