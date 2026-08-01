@@ -155,6 +155,16 @@ func (mq *mqttClientImpl) WriteCurrentData(scrape SolarZeroScrape) {
 	mq.publish("carbon/value", formatFloatN(currentData.Monitor.Carbon.Value))
 	// mq.publish("carbon/desc", currentData.Monitor.Carbon.Desc)
 
+	mq.publish("hotwater/state", currentData.Hotwater.State)
+	mq.publish("hotwater/voltage", formatFloatN(currentData.Hotwater.Voltage))
+	mq.publish("hotwater/current", formatFloatN(currentData.Hotwater.Current))
+	mq.publish("hotwater/wattage", formatFloat(currentData.Hotwater.Wattage))
+	mq.publish("hotwater/total", formatFloat(currentData.Hotwater.Total))
+	mq.publish("hotwater/average-daily-usage", formatFloat(currentData.Hotwater.AverageDailyUsage))
+	mq.publish("hotwater/circuit-on", strconv.FormatBool(currentData.Hotwater.CircuitOn))
+	mq.publish("hotwater/heating-on", strconv.FormatBool(currentData.Hotwater.HeatingOn))
+	mq.publish("hotwater/is-available", strconv.FormatBool(currentData.Hotwater.IsAvailable))
+
 	// mq.publish("home/comments", currentData.Monitor.Home.Comments)
 	// mq.publish("home/value1", formatInt(currentData.Monitor.Home.Value1.Value))
 	// mq.publish("home/value2", formatInt(currentData.Monitor.Home.Value2.Value))
@@ -384,6 +394,34 @@ func (mq *mqttClientImpl) publishDiscoveryLastResetMidnight(group, what, label, 
 		))
 }
 
+func (mq *mqttClientImpl) publishTextDiscovery(group, what, label, icon string) {
+	mq.publishDiscoveryTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseSensorTopic, group, what),
+		fmt.Sprintf(
+			`
+    {
+      "unique_id": "%[1]s-%[2]s-%[3]s",
+      "name": "%[4]s",
+      "state_topic": "%[1]s/%[2]s/%[3]s",
+      "icon": "%[5]s",
+      "device": {
+        "suggested_area": "Outside",
+        "ids": "%[1]s",
+        "name": "Solar Zero"
+      },
+      "availability": {
+        "topic": "%[1]s/status",
+        "payload_available": "ONLINE",
+        "payload_not_available": "OFFLINE"
+      }
+    }`,
+			mq.config.Mqtt.BaseTopic, // 1
+			group,                    // 2
+			what,                     // 3
+			label,                    // 4
+			icon,                     // 5
+		))
+}
+
 func (mq *mqttClientImpl) PublishHomeAssistantDiscovery() {
 
 	mq.publishDiscovery("current", "load", "House Load", "W", "power", "measurement", "mdi:home-lightning-bolt")
@@ -422,5 +460,15 @@ func (mq *mqttClientImpl) PublishHomeAssistantDiscovery() {
 	mq.publishDiscovery("flows", "gridtobattery", "Grid To Battery", "Wh", "energy", "total", "mdi:transmission-tower-import")
 
 	// mq.publishDiscovery("carbon", "value", "Carbon Usage", "ppm", "co2", "measurement", "mdi:molecule-co2")
+
+	mq.publishTextDiscovery("hotwater", "state", "Hot Water State", "mdi:water-boiler")
+	mq.publishDiscovery2DP("hotwater", "voltage", "Hot Water Voltage", "V", "voltage", "measurement", "mdi:lightning-bolt")
+	mq.publishDiscovery2DP("hotwater", "current", "Hot Water Current", "A", "current", "measurement", "mdi:current-ac")
+	mq.publishDiscovery("hotwater", "wattage", "Hot Water Power", "W", "power", "measurement", "mdi:water-boiler")
+	mq.publishDiscoveryLastResetMidnight("hotwater", "total", "Hot Water Total", "Wh", "energy", "total", "mdi:water-boiler")
+	mq.publishDiscovery("hotwater", "average-daily-usage", "Hot Water Avg Daily", "Wh", "", "measurement", "mdi:water-boiler")
+	mq.publishBoolDiscovery("hotwater", "circuit-on", "Hot Water Circuit", "plug", "mdi:electric-switch", "true", "false")
+	mq.publishBoolDiscovery("hotwater", "heating-on", "Hot Water Heating", "heat", "mdi:radiator", "true", "false")
+	mq.publishBoolDiscovery("hotwater", "is-available", "Hot Water Available", "connectivity", "mdi:water-boiler-check", "true", "false")
 
 }
