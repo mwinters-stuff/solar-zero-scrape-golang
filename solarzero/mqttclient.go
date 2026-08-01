@@ -35,7 +35,7 @@ func NewMQTTClientImpl(config *jsontypes.Configuration) MQTTClient {
 	return s
 }
 
-var defaultPublushHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+var defaultPublishHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	Logger.Info().Msgf("TOPIC: %s\n", msg.Topic())
 	Logger.Info().Msgf("MSG: %s\n", msg.Payload())
 }
@@ -56,12 +56,12 @@ func (mq *mqttClientImpl) Connect() error {
 		SetPassword(mq.config.Mqtt.Password).
 		SetWill(fmt.Sprintf("%s/%s", mq.config.Mqtt.BaseTopic, "status"), "OFFLINE", 0, true).
 		SetAutoReconnect(true).
-		SetDefaultPublishHandler(defaultPublushHandler).
+		SetDefaultPublishHandler(defaultPublishHandler).
 		SetOnConnectHandler(mq.OnConnectHandler)
 
 	mq.client = mqtt.NewClient(opts)
 	if token := mq.client.Connect(); token.Wait() && token.Error() != nil {
-		Logger.Fatal().Err(token.Error())
+		return token.Error()
 	}
 
 	return nil
@@ -88,7 +88,7 @@ func (mq *mqttClientImpl) publish(topic string, payload string) {
 	go func() {
 		_ = t.Wait() // Can also use '<-t.Done()' in releases > 1.2.0
 		if t.Error() != nil {
-			Logger.Error().Err(t.Error()) // Use your preferred logging technique (or just fmt.Printf)
+			Logger.Error().Err(t.Error()).Msg("MQTT publish error")
 		}
 	}()
 }
@@ -205,7 +205,7 @@ func (mq *mqttClientImpl) publishDiscoveryTopic(topic string, payload string) {
 	go func() {
 		_ = t.Done() // Can also use '<-t.Done()' in releases > 1.2.0
 		if t.Error() != nil {
-			Logger.Error().Err(t.Error()) // Use your preferred logging technique (or just fmt.Printf)
+			Logger.Error().Err(t.Error()).Msg("MQTT discovery publish error")
 		}
 	}()
 }
@@ -394,8 +394,8 @@ func (mq *mqttClientImpl) PublishHomeAssistantDiscovery() {
 	mq.publishDiscoveryLastResetMidnight("current", "battery-use", "Battery Use", "Wh", "energy", "total", "mdi:battery-arrow-down")
 	mq.publishDiscoveryLastResetMidnight("current", "battery-charge", "Battery Charge", "Wh", "energy", "total", "mdi:battery-charging-80")
 
-	mq.publishDiscovery("total", "home-usage", "Home Usage", "%", "energy", "measurement", "mdi:home-lightning-bolt-outline")
-	mq.publishDiscovery("total", "solar-utilization", "Solar Utilization", "%", "energy", "measurement", "mdi:solar-power")
+	mq.publishDiscovery("total", "home-usage", "Home Usage", "%", "", "measurement", "mdi:home-lightning-bolt-outline")
+	mq.publishDiscovery("total", "solar-utilization", "Solar Utilization", "%", "", "measurement", "mdi:solar-power")
 
 	mq.publishDiscoveryLastResetMidnight("total", "home-usage-total", "Home Usage Total", "Wh", "energy", "total", "mdi:home-lightning-bolt")
 	mq.publishDiscoveryLastResetMidnight("total", "solar-util-total", "Solar Util Total", "Wh", "energy", "total", "mdi:solar-power-variant")
@@ -405,7 +405,7 @@ func (mq *mqttClientImpl) PublishHomeAssistantDiscovery() {
 	mq.publishDiscovery("battery", "capacity", "Battery Capacity", "Wh", "energy", "total_increasing", "mdi:home-battery-outline")
 	mq.publishDiscoveryNoIcon("battery", "charged", "Battery SOC", "%", "battery", "measurement")
 
-	mq.publishDiscovery2DP("power-price", "current", "Current Grid Rate", "NZD/kWh", "monetary", "measurement", "mdi:currency-usd")
+	mq.publishDiscovery2DP("power-price", "current", "Current Grid Rate", "NZD/kWh", "monetary", "total", "mdi:currency-usd")
 
 	mq.publishBoolDiscovery("current", "grid-import", "Importing From Grid", "power", "mdi:transmission-tower-import", "true", "false")
 	mq.publishBoolDiscovery("current", "grid-export", "Exporting To Grid", "power", "mdi:transmission-tower-export", "true", "false")
@@ -413,13 +413,13 @@ func (mq *mqttClientImpl) PublishHomeAssistantDiscovery() {
 	mq.publishBoolDiscovery("current", "battery-used-value", "Using Battery", "battery_charging", "mdi:battery-charging-80", "true", "false")
 	mq.publishBoolDiscovery("current", "battery-charged", "Charging Battery", "battery_charging", "mdi:battery-charging-10", "true", "false")
 
-	mq.publishDiscovery("flows", "solartohome", "Solar To Home", "Wh", "energy", "measurement", "mdi:home-export-outline")
-	mq.publishDiscovery("flows", "solartobattery", "Solar To Battery", "Wh", "energy", "measurement", "mdi:battery-charging-80")
-	mq.publishDiscovery("flows", "solartogrid", "Solar To Grid", "Wh", "energy", "measurement", "mdi:transmission-tower-export")
-	mq.publishDiscovery("flows", "gridtohome", "Grid To Home", "Wh", "energy", "measurement", "mdi:transmission-tower-import")
-	mq.publishDiscovery("flows", "batterytohome", "Battery To Home", "Wh", "energy", "measurement", "mdi:battery-arrow-down")
-	mq.publishDiscovery("flows", "batterytogrid", "Battery To Grid", "Wh", "energy", "measurement", "mdi:battery-arrow-up")
-	mq.publishDiscovery("flows", "gridtobattery", "Grid To Battery", "Wh", "energy", "measurement", "mdi:transmission-tower-import")
+	mq.publishDiscovery("flows", "solartohome", "Solar To Home", "Wh", "energy", "total", "mdi:home-export-outline")
+	mq.publishDiscovery("flows", "solartobattery", "Solar To Battery", "Wh", "energy", "total", "mdi:battery-charging-80")
+	mq.publishDiscovery("flows", "solartogrid", "Solar To Grid", "Wh", "energy", "total", "mdi:transmission-tower-export")
+	mq.publishDiscovery("flows", "gridtohome", "Grid To Home", "Wh", "energy", "total", "mdi:transmission-tower-import")
+	mq.publishDiscovery("flows", "batterytohome", "Battery To Home", "Wh", "energy", "total", "mdi:battery-arrow-down")
+	mq.publishDiscovery("flows", "batterytogrid", "Battery To Grid", "Wh", "energy", "total", "mdi:battery-arrow-up")
+	mq.publishDiscovery("flows", "gridtobattery", "Grid To Battery", "Wh", "energy", "total", "mdi:transmission-tower-import")
 
 	// mq.publishDiscovery("carbon", "value", "Carbon Usage", "ppm", "co2", "measurement", "mdi:molecule-co2")
 

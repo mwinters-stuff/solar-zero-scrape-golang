@@ -51,10 +51,16 @@ func configureFlags(api *operations.SolarZeroScrapeAPIAPI) {
 func configureAPI(api *operations.SolarZeroScrapeAPIAPI) http.Handler {
 
 	opts := &solarzero.AllSolarZeroOptions{}
-	opts.SolarZeroOptions = *api.CommandLineOptionsGroups[0].Options.(*solarzero.SolarZeroOptions)
-	opts.InfluxDBOptions = *api.CommandLineOptionsGroups[1].Options.(*solarzero.InfluxDBOptions)
-	opts.MQTTOptions = *api.CommandLineOptionsGroups[2].Options.(*solarzero.MQTTOptions)
-	// opts.OtherOptions = *api.CommandLineOptionsGroups[3].Options.(*solarzero.OtherOptions)
+	for _, group := range api.CommandLineOptionsGroups {
+		switch o := group.Options.(type) {
+		case *solarzero.SolarZeroOptions:
+			opts.SolarZeroOptions = *o
+		case *solarzero.InfluxDBOptions:
+			opts.InfluxDBOptions = *o
+		case *solarzero.MQTTOptions:
+			opts.MQTTOptions = *o
+		}
+	}
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if opts.SolarZeroOptions.Debug {

@@ -23,7 +23,7 @@ func LoadConfiguration(filename string) (Configuration, error) {
 	var c Configuration
 	content, err := os.ReadFile(filename)
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Err(err).Msg("failed to read configuration file")
 		return c, err
 	}
 

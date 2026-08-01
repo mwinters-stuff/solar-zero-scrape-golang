@@ -46,7 +46,7 @@ func (iw *influxDBWriterImpl) Connect(client influxdb2.Client) error {
 	health, err := iw.client.Health(context.Background())
 
 	if err != nil {
-		Logger.Fatal().Err(err)
+		return err
 	}
 
 	Logger.Info().Msgf("InfluxDB Health: %s %s %s ", *health.Message, health.Status, *health.Version)

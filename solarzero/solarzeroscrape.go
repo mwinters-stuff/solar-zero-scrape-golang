@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -31,13 +32,14 @@ type SolarZeroScrapeImpl struct {
 
 	influxdb      InfluxDBWriter
 	mqtt          MQTTClient
+	httpClient    *http.Client
 	correlationID string
 
-	authResponse jsontypes.AuthResponse
-	customerData jsontypes.CustomerData
-	data         jsontypes.DataResponseData
-	daily        jsontypes.DailyResponseData
-
+	mu                     sync.RWMutex
+	authResponse           jsontypes.AuthResponse
+	customerData           jsontypes.CustomerData
+	data                   jsontypes.DataResponseData
+	daily                  jsontypes.DailyResponseData
 	lastGoodWriteTimestamp time.Time
 	ready                  bool
 }
@@ -89,19 +91,16 @@ func NewSolarZeroScrape(options *AllSolarZeroOptions) SolarZeroScrape {
 	Logger.Info().Msg("Authenticating")
 
 	scrape := &SolarZeroScrapeImpl{
-		config:                 config,
-		influxdb:               influxdb,
-		mqtt:                   mqtt,
-		lastGoodWriteTimestamp: time.Now(),
-		ready:                  false,
+		config:     config,
+		influxdb:   influxdb,
+		mqtt:       mqtt,
+		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 
 	return scrape
 }
 
 func (szs *SolarZeroScrapeImpl) Start() {
-	szs.ready = true
-
 	s := gocron.NewScheduler(time.Local)
 
 	if err := szs.login(szs.config.SolarZero.Username, szs.config.SolarZero.Password); err != nil {
@@ -109,37 +108,41 @@ func (szs *SolarZeroScrapeImpl) Start() {
 		os.Exit(-1)
 	}
 
-	err := szs.getCustomer()
-	if err != nil {
+	if err := szs.getCustomer(); err != nil {
 		Logger.Error().Msg(err.Error())
 		os.Exit(-1)
 	}
+
+	szs.mu.Lock()
+	szs.ready = true
+	szs.mu.Unlock()
 
 	s.Every(1).Minutes().Do(func() {
 		Logger.Info().Msgf("Get info @ %s", time.Now().String())
 		err := szs.getData()
 		if err != nil {
 			Logger.Error().Msg(err.Error())
-		}
-		if err == nil && szs.mqtt != nil {
-			szs.mqtt.WriteData(szs)
-		}
-		if err == nil && szs.influxdb != nil {
-			szs.influxdb.WriteData(szs)
+		} else {
+			if szs.mqtt != nil {
+				szs.mqtt.WriteData(szs)
+			}
+			if szs.influxdb != nil {
+				szs.influxdb.WriteData(szs)
+			}
+			szs.mu.Lock()
+			szs.lastGoodWriteTimestamp = time.Now()
+			szs.mu.Unlock()
 		}
 	})
 
 	s.Every(1).Days().Do(func() {
 		Logger.Info().Msgf("Get daily @ %s", time.Now().String())
-		err := szs.getDaily()
-		if err != nil {
+		if err := szs.getDaily(); err != nil {
 			Logger.Error().Msg(err.Error())
 		}
-		err = szs.getCustomer()
-		if err != nil {
+		if err := szs.getCustomer(); err != nil {
 			Logger.Error().Msg(err.Error())
 		}
-
 	})
 
 	s.Every(1).Hours().Do(func() {
@@ -173,8 +176,7 @@ func (szs *SolarZeroScrapeImpl) login(username, password string) error {
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-Id", szs.correlationID)
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := szs.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -217,8 +219,7 @@ func (szs *SolarZeroScrapeImpl) refreshAccessToken() error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-Id", szs.correlationID)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := szs.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -265,8 +266,7 @@ func (szs *SolarZeroScrapeImpl) makeAuthenticatedGETRequest(requests string) (st
 	req.Header.Set("x-correlation-id", szs.correlationID)
 	req.Header.Set("x-session-id", szs.authResponse.Tokens.SessionID)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := szs.httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -281,7 +281,6 @@ func (szs *SolarZeroScrapeImpl) makeAuthenticatedGETRequest(requests string) (st
 		return "", err
 	}
 
-	//fmt.Println("Response:", string(bodyBytes))
 	return string(bodyBytes), nil
 }
 
@@ -295,7 +294,7 @@ func (szs *SolarZeroScrapeImpl) makeAuthenticatedPOSTRequest(requests string, bo
 	}
 
 	url := httpURL + requests
-	Logger.Info().Msgf("GET %s with %s", url, string(body))
+	Logger.Info().Msgf("POST %s", url)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 
 	if err != nil {
@@ -308,8 +307,7 @@ func (szs *SolarZeroScrapeImpl) makeAuthenticatedPOSTRequest(requests string, bo
 	req.Header.Set("x-correlation-id", szs.correlationID)
 	req.Header.Set("x-session-id", szs.authResponse.Tokens.SessionID)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := szs.httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -324,88 +322,107 @@ func (szs *SolarZeroScrapeImpl) makeAuthenticatedPOSTRequest(requests string, bo
 		return "", err
 	}
 
-	// fmt.Println("Response from /data:", string(bodyBytes))
 	return string(bodyBytes), nil
 }
 
 func (szs *SolarZeroScrapeImpl) getCustomer() error {
-	var err error
-	var response = ""
-	if response, err = szs.makeAuthenticatedGETRequest(httpURLCustomers); err != nil {
-		Logger.Error().Msgf("Get Customer Info Failed: %s", err)
-		os.Exit(-1)
+	response, err := szs.makeAuthenticatedGETRequest(httpURLCustomers)
+	if err != nil {
+		return fmt.Errorf("get customer info failed: %w", err)
 	}
 
-	if szs.customerData, err = jsontypes.UnmarshalCustomerData([]byte(response)); err != nil {
-		Logger.Error().Msgf("Get Customer Info Failed: %s", err)
-		os.Exit(-1)
+	customerData, err := jsontypes.UnmarshalCustomerData([]byte(response))
+	if err != nil {
+		return fmt.Errorf("unmarshal customer data failed: %w", err)
 	}
+	szs.mu.Lock()
+	szs.customerData = customerData
+	szs.mu.Unlock()
 	return nil
 }
 
 func (szs *SolarZeroScrapeImpl) getData() error {
-
 	var infoRequestData jsontypes.DataRequestData
 	infoRequestData.HasTou = true
 	infoRequestData.ProviderID = "nz-ecotricity"
 	infoRequestData.Timezone = "Pacific/Auckland"
 	infoRequestData.SiteID = szs.customerData.Account.SiteID
-	bytes, _ := infoRequestData.Marshal()
+	b, err := infoRequestData.Marshal()
+	if err != nil {
+		return err
+	}
 
-	var err error
-	var response = ""
-
-	if response, err = szs.makeAuthenticatedPOSTRequest(httpURLInfo, bytes); err != nil {
+	response, err := szs.makeAuthenticatedPOSTRequest(httpURLInfo, b)
+	if err != nil {
 		Logger.Error().Msgf("Get Data Failed: %s", err)
 		return err
 	}
 
-	if szs.data, err = jsontypes.UnmarshalDataResponseData([]byte(response)); err != nil {
+	data, err := jsontypes.UnmarshalDataResponseData([]byte(response))
+	if err != nil {
 		Logger.Error().Msgf("Get Data Info Failed: %s", err)
 		return err
 	}
+	szs.mu.Lock()
+	szs.data = data
+	szs.mu.Unlock()
 	return nil
 }
 
 func (szs *SolarZeroScrapeImpl) getDaily() error {
-
 	var dailyRequestData jsontypes.DailyRequestData
 	dailyRequestData.HasTou = true
 	dailyRequestData.Timezone = "Pacific/Auckland"
 	dailyRequestData.SiteID = szs.customerData.Account.SiteID
-	bytes, _ := dailyRequestData.Marshal()
+	b, err := dailyRequestData.Marshal()
+	if err != nil {
+		return err
+	}
 
-	var err error
-	var response = ""
-
-	if response, err = szs.makeAuthenticatedPOSTRequest(httpURLDaily, bytes); err != nil {
+	response, err := szs.makeAuthenticatedPOSTRequest(httpURLDaily, b)
+	if err != nil {
 		Logger.Error().Msgf("Get Daily Failed: %s", err)
 		return err
 	}
 
-	if szs.daily, err = jsontypes.UnmarshalDailyResponseData([]byte(response)); err != nil {
+	daily, err := jsontypes.UnmarshalDailyResponseData([]byte(response))
+	if err != nil {
 		Logger.Error().Msgf("Get Daily Info Failed: %s", err)
 		return err
 	}
+	szs.mu.Lock()
+	szs.daily = daily
+	szs.mu.Unlock()
 	return nil
 }
 
 func (szs *SolarZeroScrapeImpl) Daily() jsontypes.DailyResponseData {
+	szs.mu.RLock()
+	defer szs.mu.RUnlock()
 	return szs.daily
 }
 
 func (szs *SolarZeroScrapeImpl) Data() jsontypes.DataResponseData {
+	szs.mu.RLock()
+	defer szs.mu.RUnlock()
 	return szs.data
 }
 
 func (szs *SolarZeroScrapeImpl) Customer() jsontypes.CustomerData {
+	szs.mu.RLock()
+	defer szs.mu.RUnlock()
 	return szs.customerData
 }
 
 func (szs *SolarZeroScrapeImpl) Ready() bool {
+	szs.mu.RLock()
+	defer szs.mu.RUnlock()
 	return szs.ready
 }
 
+// Healthy returns false if no successful data write has occurred in the last 5 minutes.
 func (szs *SolarZeroScrapeImpl) Healthy() bool {
-	return szs.ready
+	szs.mu.RLock()
+	defer szs.mu.RUnlock()
+	return szs.ready && time.Since(szs.lastGoodWriteTimestamp) < 5*time.Minute
 }
