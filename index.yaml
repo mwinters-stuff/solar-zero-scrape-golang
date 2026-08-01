@@ -145,4 +145,22 @@ entries:
     urls:
     - https://github.com/mwinters-stuff/solar-zero-scrape-golang/releases/download/solar-zero-scrape-1.13.3/solar-zero-scrape-1.13.3.tgz
     version: 1.13.3
-generated: "2025-03-23T21:44:36.363674214Z"
+  - apiVersion: v2
+    appVersion: 1.2.0
+    created: "2026-08-01T08:09:04.869975884Z"
+    description: An image and helm chart for solar-zero-scrape
+    digest: 475aa331cab662d8850d2eca7857f80f82b318fbac1664b082cc29c3eb190556
+    home: https://github.com/mwinters-stuff/solar-zero-scrape-golang
+    keywords:
+    - solar-zero-scrape
+    kubeVersion: '>=1.16.0-0'
+    maintainers:
+    - email: [REDACTED_EMAIL]
+      name: mwinters
+    name: solar-zero-scrape
+    sources:
+    - https://github.com/mwinters-stuff/solar-zero-scrape-golang
+    urls:
+    - https://github.com/mwinters-stuff/solar-zero-scrape-golang/releases/download/solar-zero-scrape-1.2.0/solar-zero-scrape-1.2.0.tgz
+    version: 1.2.0
+generated: "2026-08-01T08:09:04.870001111Z"
