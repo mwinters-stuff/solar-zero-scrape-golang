@@ -221,6 +221,10 @@ func (mq *mqttClientImpl) publishDiscoveryTopic(topic string, payload string) {
 }
 
 func (mq *mqttClientImpl) publishDiscovery(group, what, label, unit_of_meas, dev_class, measurement, icon string) {
+	devClassField := ""
+	if dev_class != "" {
+		devClassField = fmt.Sprintf(`"device_class": "%s",`, dev_class)
+	}
 	mq.publishDiscoveryTopic(fmt.Sprintf("%s-%s-%s/config", mq.baseSensorTopic, group, what),
 		fmt.Sprintf(
 			`
@@ -230,7 +234,7 @@ func (mq *mqttClientImpl) publishDiscovery(group, what, label, unit_of_meas, dev
       "state_topic": "%[1]s/%[2]s/%[3]s",
       "unit_of_meas": "%[5]s",
       "suggested_display_precision": 0,
-      "device_class": "%[6]s",
+      %[6]s
       "state_class": "%[7]s",
       "icon": "%[8]s",
       "device": {
@@ -249,7 +253,7 @@ func (mq *mqttClientImpl) publishDiscovery(group, what, label, unit_of_meas, dev
 			what,                     // 3
 			label,                    // 4
 			unit_of_meas,             // 5
-			dev_class,                // 6
+			devClassField,            // 6 — empty string omits the field
 			measurement,              // 7
 			icon,                     // 8
 		))
