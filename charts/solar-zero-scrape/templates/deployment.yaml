@@ -53,12 +53,11 @@ spec:
             {{- if .Values.host }}
             - --host={{ .Values.host }}
             {{- end }}
+
             {{- if .Values.tls.enabled }}
             - --secure-port={{ .Values.tls.port }}
             {{- end }}
-            # {{- if .Values.tls.certPath }}
-            # - --cert-path={{ .Values.tls.certPath }}
-            # {{- end }}
+
             {{- if .Values.logLevel }}
             - --level={{ .Values.logLevel }}
             {{- end }}
@@ -66,6 +65,7 @@ spec:
             {{- if .Values.solarZero.username }}
             - --solarzero-username={{ .Values.solarZero.username }}
             {{- end }}
+
             {{- if .Values.solarZero.password }}
             - --solarzero-password={{ .Values.solarZero.password }}
             {{- end }}
@@ -73,12 +73,15 @@ spec:
             {{- if .Values.mqtt.hosturl }}
             - --mqtt-server-url={{ .Values.mqtt.hosturl }}
             {{- end }}
+
             {{- if .Values.mqtt.topic }}
             - --mqtt-topic={{ .Values.mqtt.topic }}
             {{- end }}
+
             {{- if .Values.mqtt.username }}
             - --mqtt-username={{ .Values.mqtt.username }}
             {{- end }}
+
             {{- if .Values.mqtt.password }}
             - --mqtt-password={{ .Values.mqtt.password }}
             {{- end }}

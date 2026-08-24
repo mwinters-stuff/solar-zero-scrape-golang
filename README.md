@@ -4,7 +4,7 @@ Solar Zero Scrape re-written and improved in go
 
 ## Config - Docker
 
-* Copy config-template.json to config.json, edit. change username/password for solar zero and set the influx and mqtt sections.
+* Copy config-template.json to config.json, edit. change username/password for solar zero and set the mqtt section.
 * Run docker
   eg: `docker run -v $(pwd)/solar-zero-scrape.json:/config/solar-zero-scrape.json ghcr.io/mwinters-stuff/solar-zero-scrape-golang:latest`
 
