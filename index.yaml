@@ -11,7 +11,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -29,7 +29,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -47,7 +47,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -65,7 +65,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -83,7 +83,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -101,7 +101,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -119,7 +119,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -137,7 +137,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -155,7 +155,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -173,7 +173,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -191,7 +191,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -209,7 +209,7 @@ entries:
     - solar-zero-scrape
     kubeVersion: '>=1.16.0-0'
     maintainers:
-    - email: [REDACTED_EMAIL]
+    - email: '[REDACTED_EMAIL]'
       name: mwinters
     name: solar-zero-scrape
     sources:
@@ -217,4 +217,4 @@ entries:
     urls:
     - https://github.com/mwinters-stuff/solar-zero-scrape-golang/releases/download/solar-zero-scrape-1.2.0/solar-zero-scrape-1.2.0.tgz
     version: 1.2.0
-generated: "2026-08-24T06:20:43.527952257Z"
+generated: "2026-08-24T20:26:41.734242607+12:00"
