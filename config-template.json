@@ -12,12 +12,7 @@
         "SolarZeroApiAddress": "sunvolt.pnz.technology"
       }
   },
-  "InfluxDB":{
-      "Token": "token",
-      "HostUrl": "https://influxdb.example.com",
-      "Org": "example.com",
-      "Bucket": "solarzero/autogen"
-  },
+
   "MQTT": {
     "URL":"mqtt://example.com:1883",
     "Username": "solarzero",

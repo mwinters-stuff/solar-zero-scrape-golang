@@ -111,12 +111,6 @@ spec:
         solarZero:
             username: your@username
             password: yourpassword
-        influxdb:
-            hostUrl: url
-            token: atoken
-            org: place.nz
-            bucket: solarzero
-            measurement: solarzero
         mqtt:
             hosturl: mqtt://mosquitto.apps.svc:1883
             topic: solar-zero
@@ -125,4 +119,4 @@ spec:
 
 ```
 
-If you dont want influxdb, or mqtt those can be removed from the configuration.
+

@@ -69,22 +69,7 @@ spec:
             {{- if .Values.solarZero.password }}
             - --solarzero-password={{ .Values.solarZero.password }}
             {{- end }}
-            {{- if .Values.influxdb.hostUrl }}
-            - --influx-host-url={{ .Values.influxdb.hostUrl }}
-            {{- end }}
-            {{- if .Values.influxdb.token }}
-            - --influx-token={{ .Values.influxdb.token }}
-            {{- end }}
-            {{- if .Values.influxdb.org }}
-            - --influx-org={{ .Values.influxdb.org }}
-            {{- end }}
-            {{- if .Values.influxdb.bucket }}
-            - --influx-bucket={{ .Values.influxdb.bucket }}
-            {{- end }}
-            {{- if .Values.influxdb.measurement }}
-            - --influx-measurement={{ .Values.influxdb.measurement }}
-            {{- end }}
-
+           
             {{- if .Values.mqtt.hosturl }}
             - --mqtt-server-url={{ .Values.mqtt.hosturl }}
             {{- end }}

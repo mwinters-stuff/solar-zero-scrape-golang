@@ -15,13 +15,6 @@ func TestDecodeConfigurationData(t *testing.T) {
 				"Username": "your@email",
 				"Password": "password"
 		},
-		"InfluxDB":{
-				"Token": "token",
-				"HostUrl": "https://influxdb.example.com",
-				"Org": "example.com",
-				"Bucket": "solarzero/autogen",
-				"Measurement": "solarzero"
-		},
 		"MQTT": {
 			"URL":"mqtt://example.com:1883",
 			"Username": "solarzero",
@@ -37,12 +30,6 @@ func TestDecodeConfigurationData(t *testing.T) {
 	assert.Equal(t, "your@email", data.SolarZero.Username)
 	assert.Equal(t, "password", data.SolarZero.Password)
 
-	assert.Equal(t, "token", data.InfluxDB.Token)
-	assert.Equal(t, "https://influxdb.example.com", data.InfluxDB.HostURL)
-	assert.Equal(t, "example.com", data.InfluxDB.Org)
-	assert.Equal(t, "solarzero/autogen", data.InfluxDB.Bucket)
-	assert.Equal(t, "solarzero", data.InfluxDB.Measurement)
-
 	assert.Equal(t, "mqtt://example.com:1883", data.Mqtt.URL)
 	assert.Equal(t, "solarzero", data.Mqtt.Username)
 	assert.Equal(t, "zerosolar", data.Mqtt.Password)
@@ -57,13 +44,6 @@ func TestLoadConfiguration(t *testing.T) {
 		"SolarZero": {
 				"Username": "your@email",
 				"Password": "password"
-		},
-		"InfluxDB":{
-				"Token": "token",
-				"HostUrl": "https://influxdb.example.com",
-				"Org": "example.com",
-				"Bucket": "solarzero/autogen",
-				"Measurement": "solarzero"
 		},
 		"MQTT": {
 			"URL":"mqtt://example.com:1883",
@@ -86,12 +66,6 @@ func TestLoadConfiguration(t *testing.T) {
 
 	assert.Equal(t, "your@email", data.SolarZero.Username)
 	assert.Equal(t, "password", data.SolarZero.Password)
-
-	assert.Equal(t, "token", data.InfluxDB.Token)
-	assert.Equal(t, "https://influxdb.example.com", data.InfluxDB.HostURL)
-	assert.Equal(t, "example.com", data.InfluxDB.Org)
-	assert.Equal(t, "solarzero/autogen", data.InfluxDB.Bucket)
-	assert.Equal(t, "solarzero", data.InfluxDB.Measurement)
 
 	assert.Equal(t, "mqtt://example.com:1883", data.Mqtt.URL)
 	assert.Equal(t, "solarzero", data.Mqtt.Username)

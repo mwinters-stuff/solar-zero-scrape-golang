@@ -45,7 +45,6 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/go-co-op/gocron v1.17.0
 	github.com/google/uuid v1.6.0
-	github.com/influxdata/influxdb-client-go/v2 v2.10.0
 	github.com/rs/zerolog v1.28.0
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/net v0.0.0-20220906165146-f3363e06e74c

@@ -32,11 +32,6 @@ func configureFlags(api *operations.SolarZeroScrapeAPIAPI) {
 		Options:          &opts.SolarZeroOptions,
 	})
 	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, swag.CommandLineOptionsGroup{
-		ShortDescription: "influxdb",
-		LongDescription:  "Influx DB Config",
-		Options:          &opts.InfluxDBOptions,
-	})
-	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, swag.CommandLineOptionsGroup{
 		ShortDescription: "mqtt",
 		LongDescription:  "MQTT Options",
 		Options:          &opts.MQTTOptions,
@@ -55,8 +50,6 @@ func configureAPI(api *operations.SolarZeroScrapeAPIAPI) http.Handler {
 		switch o := group.Options.(type) {
 		case *solarzero.SolarZeroOptions:
 			opts.SolarZeroOptions = *o
-		case *solarzero.InfluxDBOptions:
-			opts.InfluxDBOptions = *o
 		case *solarzero.MQTTOptions:
 			opts.MQTTOptions = *o
 		}

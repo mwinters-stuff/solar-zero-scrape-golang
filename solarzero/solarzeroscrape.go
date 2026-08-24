@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-co-op/gocron"
 	"github.com/google/uuid"
-	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/mwinters-stuff/solar-zero-scrape-golang/solarzero/jsontypes"
 )
 
@@ -30,7 +29,6 @@ type SolarZeroScrape interface {
 type SolarZeroScrapeImpl struct {
 	config jsontypes.Configuration
 
-	influxdb      InfluxDBWriter
 	mqtt          MQTTClient
 	httpClient    *http.Client
 	correlationID string
@@ -57,26 +55,11 @@ func NewSolarZeroScrape(options *AllSolarZeroOptions) SolarZeroScrape {
 		config.SolarZero.Username = options.SolarZeroOptions.Username
 		config.SolarZero.Password = options.SolarZeroOptions.Password
 
-		config.InfluxDB.HostURL = options.InfluxDBOptions.HostURL
-		config.InfluxDB.Token = options.InfluxDBOptions.Token
-		config.InfluxDB.Org = options.InfluxDBOptions.Org
-		config.InfluxDB.Bucket = options.InfluxDBOptions.Bucket
-		config.InfluxDB.Measurement = options.InfluxDBOptions.Measurement
-
 		config.Mqtt.URL = options.MQTTOptions.ServerURL
 		config.Mqtt.Username = options.MQTTOptions.Username
 		config.Mqtt.Password = options.MQTTOptions.Password
 		config.Mqtt.BaseTopic = options.MQTTOptions.Topic
 
-	}
-
-	var influxdb InfluxDBWriter
-	if config.InfluxDB.HostURL != "" {
-		influxdb = NewInfluxDBWriter(&config)
-		var err = influxdb.Connect(influxdb2.NewClient(config.InfluxDB.HostURL, config.InfluxDB.Token))
-		if err != nil {
-			Logger.Panic().Msgf("InfluxDB Connect %s", err.Error())
-		}
 	}
 
 	var mqtt MQTTClient
@@ -92,7 +75,6 @@ func NewSolarZeroScrape(options *AllSolarZeroOptions) SolarZeroScrape {
 
 	scrape := &SolarZeroScrapeImpl{
 		config:     config,
-		influxdb:   influxdb,
 		mqtt:       mqtt,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
@@ -125,9 +107,6 @@ func (szs *SolarZeroScrapeImpl) Start() {
 		} else {
 			if szs.mqtt != nil {
 				szs.mqtt.WriteData(szs)
-			}
-			if szs.influxdb != nil {
-				szs.influxdb.WriteData(szs)
 			}
 			szs.mu.Lock()
 			szs.lastGoodWriteTimestamp = time.Now()

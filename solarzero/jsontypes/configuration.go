@@ -33,16 +33,7 @@ func LoadConfiguration(filename string) (Configuration, error) {
 
 type Configuration struct {
 	SolarZero SolarZero `json:"SolarZero"`
-	InfluxDB  InfluxDB  `json:"InfluxDB"`
 	Mqtt      Mqtt      `json:"MQTT"`
-}
-
-type InfluxDB struct {
-	Token       string `json:"Token"`
-	HostURL     string `json:"HostUrl"`
-	Org         string `json:"Org"`
-	Bucket      string `json:"Bucket"`
-	Measurement string `json:"Measurement"`
 }
 
 type Mqtt struct {
